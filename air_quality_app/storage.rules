@@ -1,0 +1,25 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Kullanıcı profil resimleri
+    match /users/{userId}/profile/{fileName} {
+      // Kullanıcılar sadece kendi profil resimlerini yükleyebilir ve güncelleyebilir
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Hava kalitesi görselleri
+    match /air_quality/{fileName} {
+      // Herkes hava kalitesi görsellerini okuyabilir
+      allow read: if request.auth != null;
+      // Sadece admin kullanıcılar yazabilir
+      allow write: if request.auth != null && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Varsayılan olarak tüm erişimleri reddet
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+} 

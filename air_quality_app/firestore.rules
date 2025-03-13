@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Kullanıcı profilleri koleksiyonu
+    match /users/{userId} {
+      // Kullanıcılar sadece kendi profillerini okuyabilir ve güncelleyebilir
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // Kullanıcılar kendi profillerini oluşturabilir
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Kullanıcı konum geçmişi koleksiyonu
+    match /users/{userId}/locations/{locationId} {
+      // Kullanıcılar sadece kendi konum geçmişlerine erişebilir
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Hava kalitesi verileri koleksiyonu
+    match /airQualityData/{dataId} {
+      // Herkes hava kalitesi verilerini okuyabilir
+      allow read: if request.auth != null;
+      // Sadece admin kullanıcılar yazabilir (API'den gelen veriler için)
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Kullanıcı bildirimleri koleksiyonu
+    match /users/{userId}/notifications/{notificationId} {
+      // Kullanıcılar sadece kendi bildirimlerine erişebilir
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      // Kullanıcılar ve admin kullanıcılar bildirim oluşturabilir
+      allow create, update: if request.auth != null && (request.auth.uid == userId || 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
+    }
+    
+    // Kullanıcı ayarları koleksiyonu
+    match /users/{userId}/settings/{settingId} {
+      // Kullanıcılar sadece kendi ayarlarına erişebilir
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Varsayılan olarak tüm erişimleri reddet
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

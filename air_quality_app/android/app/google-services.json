@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "402242381864",
+    "project_id": "airy-2179b",
+    "storage_bucket": "airy-2179b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:402242381864:android:de443da87d11e583182d1d",
+        "android_client_info": {
+          "package_name": "com.airquality.air_quality_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWa3C1MRKFRXuMIh55y5fX-6tbH7TXx98"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+} 
