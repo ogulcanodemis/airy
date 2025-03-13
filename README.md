@@ -1,7 +1,7 @@
 # Airy - Air Quality Monitoring App
 
 <p align="center">
-  <img src="air_quality_app/assets/images/app_logo.png" alt="Airy App Logo" width="200"/>
+  <img src="assets/images/app_logo.png" alt="Airy App Logo" width="200"/>
 </p>
 
 ## 📱 About the App
