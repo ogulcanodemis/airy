@@ -19,16 +19,20 @@ class NotificationProvider with ChangeNotifier {
 
   // Kullanıcı bildirimlerini dinlemeye başlama
   void startListeningNotifications(String userId) {
+    print('NotificationProvider: Bildirim dinleme başlatılıyor... (userId: $userId)');
+    
     // Önceki aboneliği iptal et
     stopListeningNotifications();
 
     // Yeni abonelik oluştur
     _notificationSubscription = _firebaseService.getUserNotifications(userId).listen(
       (notifications) {
+        print('NotificationProvider: ${notifications.length} bildirim alındı');
         _notifications = notifications;
         notifyListeners();
       },
       onError: (e) {
+        print('NotificationProvider: Bildirim dinleme hatası: $e');
         _error = 'Bildirimler alınırken hata oluştu: $e';
         notifyListeners();
       },
@@ -99,6 +103,26 @@ class NotificationProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _error = 'Bildirim silinirken hata oluştu: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // Tüm bildirimleri silme
+  Future<void> deleteAllNotifications(String userId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Firestore'dan tüm bildirimleri sil
+      await _firebaseService.deleteAllNotifications(userId);
+      
+      // Yerel listeyi temizle
+      _notifications.clear();
+      notifyListeners();
+    } catch (e) {
+      _error = 'Bildirimler silinirken hata oluştu: $e';
     }
 
     _isLoading = false;

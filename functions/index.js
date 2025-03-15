@@ -75,14 +75,100 @@ exports.scheduledAirQualityCheck = onSchedule(
               
               // WAQI API'den veri al
               try {
-                const response = await axios.get(`https://api.waqi.info/feed/geo:${latitude};${longitude}/?token=${WAQI_API_KEY}`);
+                // Önce Geocoding API ile koordinatları detaylı konum bilgisine dönüştür
+                const geocodingResponse = await axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=tr`);
+                
+                let locationQuery = ""; // Konum sorgusu
+                
+                if (geocodingResponse.data) {
+                  const geoData = geocodingResponse.data;
+                  
+                  // Şehir bilgisi
+                  const city = geoData.city || "";
+                  
+                  // İlçe bilgisi
+                  const district = geoData.locality || geoData.district || "";
+                  
+                  // Mahalle bilgisi
+                  const neighborhood = geoData.neighbourhood || "";
+                  
+                  // Konum bilgilerini kaydet
+                  logger.info(`Konum detayları: Şehir=${city}, İlçe=${district}, Mahalle=${neighborhood}`);
+                  
+                  // Konum sorgusu oluştur
+                  if (city && district) {
+                    // Önce şehir ve ilçe ile deneyelim
+                    locationQuery = `${city}/${district}`.toLowerCase();
+                    logger.info(`Şehir ve ilçe ile sorgu yapılacak: ${locationQuery}`);
+                  } else if (city) {
+                    // Sadece şehir ile deneyelim
+                    locationQuery = city.toLowerCase();
+                    logger.info(`Sadece şehir ile sorgu yapılacak: ${locationQuery}`);
+                  } else {
+                    // Konum bilgisi yoksa varsayılan olarak boş bırak
+                    logger.warn(`Koordinatlar (${latitude}, ${longitude}) için konum bilgisi bulunamadı`);
+                    return; // Konum bilgisi yoksa işlemi sonlandır
+                  }
+                } else {
+                  logger.warn(`Koordinatlar (${latitude}, ${longitude}) için konum bilgisi bulunamadı`);
+                  return; // Konum bilgisi yoksa işlemi sonlandır
+                }
+                
+                // Konum adı ile WAQI API'den veri al
+                logger.info(`WAQI API sorgusu yapılıyor: ${locationQuery}`);
+                let response;
+                
+                try {
+                  // İlk olarak şehir/ilçe ile deneyelim
+                  response = await axios.get(`https://api.waqi.info/feed/${locationQuery}/?token=${WAQI_API_KEY}`);
+                  
+                  // Eğer sonuç bulunamazsa veya hata varsa, sadece şehir ile deneyelim
+                  if (response.data.status !== "ok" && locationQuery.includes("/")) {
+                    const cityOnly = locationQuery.split("/")[0];
+                    logger.info(`Şehir/ilçe sorgusu başarısız oldu, sadece şehir ile deneniyor: ${cityOnly}`);
+                    response = await axios.get(`https://api.waqi.info/feed/${cityOnly}/?token=${WAQI_API_KEY}`);
+                    
+                    // Eğer şehir sorgusu başarılı olursa, locationQuery'yi güncelle
+                    if (response.data.status === "ok") {
+                      locationQuery = cityOnly;
+                    }
+                  }
+                  
+                  // Eğer hala sonuç bulunamazsa, Türkiye'deki büyük şehirlerden birini deneyelim
+                  if (response.data.status !== "ok") {
+                    const bigCities = ["istanbul", "ankara", "izmir", "bursa", "antalya"];
+                    
+                    for (const city of bigCities) {
+                      logger.info(`Yerel sorgu başarısız oldu, büyük şehir deneniyor: ${city}`);
+                      response = await axios.get(`https://api.waqi.info/feed/${city}/?token=${WAQI_API_KEY}`);
+                      
+                      if (response.data.status === "ok") {
+                        locationQuery = city;
+                        logger.info(`Büyük şehir sorgusu başarılı: ${city}`);
+                        break;
+                      }
+                    }
+                  }
+                } catch (error) {
+                  logger.error(`WAQI API sorgusu sırasında hata oluştu: ${error}`);
+                  return;
+                }
                 
                 if (response.data.status === "ok") {
                   const data = response.data.data;
                   const aqi = data.aqi;
-                  const location = data.city.name || "Bilinmeyen Konum";
+                  const location = data.city.name || locationQuery;
                   
                   logger.info(`${userId} kullanıcısı için hava kalitesi verisi alındı: ${location}, AQI: ${aqi}`);
+                  
+                  // Hava kalitesi verisini Firestore'a kaydet
+                  await db.collection("airQualityData").doc(locationQuery.replace(/\//g, "_")).set({
+                    aqi: aqi,
+                    location: location,
+                    locationQuery: locationQuery,
+                    timestamp: new Date(),
+                    updatedAt: new Date()
+                  });
                   
                   // Bildirim eşiğini kontrol et
                   if (aqi >= settings.notificationThreshold) {
@@ -120,7 +206,6 @@ exports.scheduledAirQualityCheck = onSchedule(
                           channelId: "air_quality_alerts",
                           priority: "high",
                           sound: "default",
-                          vibrationPattern: [200, 500, 200, 500],
                           color: "#4CAF50",
                           icon: "ic_notification",
                           clickAction: "FLUTTER_NOTIFICATION_CLICK",
@@ -202,6 +287,7 @@ exports.checkAirQualityAlerts = onDocumentCreated(
       // AQI değerini kontrol et
       const aqi = airQualityData.aqi;
       const location = airQualityData.location || "Bilinmeyen Konum";
+      const locationQuery = airQualityData.locationQuery || "istanbul";
       
       logger.info(`Yeni hava kalitesi verisi: ${location}, AQI: ${aqi}`);
       
@@ -246,7 +332,6 @@ exports.checkAirQualityAlerts = onDocumentCreated(
               channelId: "air_quality_alerts",
               priority: "high",
               sound: "default",
-              vibrationPattern: [200, 500, 200, 500],
               color: "#4CAF50",
               icon: "ic_notification",
               clickAction: "FLUTTER_NOTIFICATION_CLICK",
@@ -318,6 +403,7 @@ exports.checkAirQualityUpdates = onDocumentUpdated(
       const newAqi = afterData.aqi;
       const oldAqi = beforeData && beforeData.aqi ? beforeData.aqi : 0;
       const location = afterData.location || "Bilinmeyen Konum";
+      const locationQuery = afterData.locationQuery || "istanbul";
       
       // AQI değeri artmış mı kontrol et (sadece kötüleşme durumunda bildirim gönder)
       if (newAqi <= oldAqi) {
@@ -370,7 +456,6 @@ exports.checkAirQualityUpdates = onDocumentUpdated(
               channelId: "air_quality_alerts",
               priority: "high",
               sound: "default",
-              vibrationPattern: [200, 500, 200, 500],
               color: "#4CAF50",
               icon: "ic_notification",
               clickAction: "FLUTTER_NOTIFICATION_CLICK",
@@ -480,7 +565,6 @@ exports.sendNotificationToUser = onDocumentCreated(
             channelId: "air_quality_alerts",
             priority: "high",
             sound: "default",
-            vibrationPattern: [200, 500, 200, 500],
             color: "#4CAF50",
             icon: "ic_notification",
             clickAction: "FLUTTER_NOTIFICATION_CLICK",

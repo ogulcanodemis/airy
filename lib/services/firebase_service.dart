@@ -217,27 +217,34 @@ class FirebaseService {
   // Bildirim işlemleri
   Future<void> saveNotification(NotificationModel notification) async {
     try {
+      print('FirebaseService: Bildirim kaydediliyor... (userId: ${notification.userId}, id: ${notification.id})');
       await _firestore
           .collection('users')
           .doc(notification.userId)
           .collection('notifications')
           .doc(notification.id)
           .set(notification.toMap());
+      print('FirebaseService: Bildirim başarıyla kaydedildi');
     } catch (e) {
+      print('FirebaseService: Bildirim kaydedilirken hata oluştu: $e');
       throw Exception('Bildirim kaydedilirken hata oluştu: $e');
     }
   }
 
   Stream<List<NotificationModel>> getUserNotifications(String userId) {
+    print('FirebaseService: Bildirimler alınıyor... (userId: $userId)');
     return _firestore
         .collection('users')
         .doc(userId)
         .collection('notifications')
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => NotificationModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map((snapshot) {
+          print('FirebaseService: Firestore\'dan ${snapshot.docs.length} bildirim alındı');
+          return snapshot.docs
+              .map((doc) => NotificationModel.fromMap(doc.data(), doc.id))
+              .toList();
+        });
   }
 
   Future<void> markNotificationAsRead(String userId, String notificationId) async {
@@ -263,6 +270,32 @@ class FirebaseService {
           .delete();
     } catch (e) {
       throw Exception('Bildirim silinirken hata oluştu: $e');
+    }
+  }
+
+  // Tüm bildirimleri silme
+  Future<void> deleteAllNotifications(String userId) async {
+    try {
+      // Firestore'da toplu silme işlemi yok, bu yüzden tüm bildirimleri alıp tek tek siliyoruz
+      final QuerySnapshot snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('notifications')
+          .get();
+      
+      // Batch işlemi ile toplu silme
+      final WriteBatch batch = _firestore.batch();
+      
+      for (var doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      
+      // Batch işlemini çalıştır
+      await batch.commit();
+      
+      print('FirebaseService: ${snapshot.docs.length} bildirim silindi');
+    } catch (e) {
+      throw Exception('Tüm bildirimler silinirken hata oluştu: $e');
     }
   }
 

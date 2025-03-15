@@ -4,6 +4,8 @@ import '../providers/notification_provider.dart';
 import '../providers/auth_provider.dart';
 import '../styles/app_styles.dart';
 import '../widgets/animated_widgets.dart';
+import '../services/firebase_service.dart';
+import '../models/notification_model.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -16,6 +18,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
   late AnimationController _animationController;
   bool _isDeleting = false;
   String? _deletingId;
+  bool _showAllNotifications = false; // Tüm bildirimleri gösterme durumu
 
   @override
   void initState() {
@@ -24,6 +27,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    
+    // Bildirim sayısını kontrol et
+    final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+    print('NotificationsScreen: Bildirim sayısı: ${notificationProvider.notifications.length}');
+    
+    // Kullanıcı kimliğini kontrol et
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isAuthenticated) {
+      print('NotificationsScreen: Kullanıcı kimliği: ${authProvider.firebaseUser!.uid}');
+    } else {
+      print('NotificationsScreen: Kullanıcı oturum açmamış');
+    }
   }
 
   @override
@@ -82,6 +97,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
               },
               tooltip: 'Tümünü okundu olarak işaretle',
             ),
+          // Bildirim silme butonu
+          if (notificationProvider.notifications.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              onPressed: () {
+                if (authProvider.isAuthenticated) {
+                  _showDeleteAllConfirmation(
+                    context, 
+                    authProvider.firebaseUser!.uid,
+                    notificationProvider,
+                  );
+                }
+              },
+              tooltip: 'Tüm bildirimleri sil',
+            ),
         ],
       ),
       body: Container(
@@ -101,6 +131,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
   }
 
   Widget _buildNotificationsList(NotificationProvider notificationProvider, AuthProvider authProvider) {
+    print('NotificationsScreen: _buildNotificationsList çağrıldı');
+    print('NotificationsScreen: isLoading: ${notificationProvider.isLoading}');
+    print('NotificationsScreen: notifications.length: ${notificationProvider.notifications.length}');
+    
     if (notificationProvider.isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -108,16 +142,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     }
 
     if (notificationProvider.notifications.isEmpty) {
+      print('NotificationsScreen: Bildirim bulunamadı');
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            BreathingAnimation(
-              child: Icon(
-                Icons.notifications_off_outlined,
-                size: 80,
-                color: Colors.grey.shade400,
-              ),
+            Icon(
+              Icons.notifications_off_outlined,
+              size: 80,
+              color: Colors.grey.shade400,
             ),
             const SizedBox(height: 16),
             Text(
@@ -141,251 +174,251 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       );
     }
 
+    // Gösterilecek bildirimleri belirle
+    final allNotifications = notificationProvider.notifications;
+    final hasMoreNotifications = allNotifications.length > 20;
+    
+    // Eğer _showAllNotifications false ise, sadece son 20 bildirimi göster
+    final displayedNotifications = _showAllNotifications 
+        ? allNotifications 
+        : allNotifications.take(20).toList();
+    
+    print('NotificationsScreen: ${displayedNotifications.length} bildirim gösteriliyor');
+
     return RefreshIndicator(
       onRefresh: () async {
         // Bildirimleri yenileme işlemi
         if (authProvider.isAuthenticated) {
+          print('NotificationsScreen: Bildirimler yenileniyor...');
           notificationProvider.stopListeningNotifications();
           notificationProvider.startListeningNotifications(
             authProvider.firebaseUser!.uid,
           );
         }
       },
-      child: ListView.builder(
-        padding: const EdgeInsets.only(top: 8),
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: notificationProvider.notifications.length,
-        itemBuilder: (context, index) {
-          final notification = notificationProvider.notifications[index];
-          final color = notificationProvider.getNotificationColor(notification.type);
-          final icon = notificationProvider.getNotificationIcon(notification.type);
-          
-          // Animasyon için gecikme
-          Future.delayed(Duration(milliseconds: 50 * index), () {
-            if (mounted) {
-              _animationController.forward();
-            }
-          });
-          
-          return AnimatedBuilder(
-            animation: _animationController,
-            builder: (context, child) {
-              return FadeTransition(
-                opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-                  CurvedAnimation(
-                    parent: _animationController,
-                    curve: Interval(0.0, 1.0, curve: Curves.easeOut),
-                  ),
-                ),
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0.5, 0.0),
-                    end: Offset.zero,
-                  ).animate(
-                    CurvedAnimation(
-                      parent: _animationController,
-                      curve: Interval(0.0, 1.0, curve: Curves.easeOut),
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.only(top: 8),
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: displayedNotifications.length,
+              itemBuilder: (context, index) {
+                final notification = displayedNotifications[index];
+                final color = notificationProvider.getNotificationColor(notification.type);
+                final icon = notificationProvider.getNotificationIcon(notification.type);
+                
+                return Dismissible(
+                  key: Key(notification.id),
+                  background: Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
                     ),
-                  ),
-                  child: child,
-                ),
-              );
-            },
-            child: Dismissible(
-              key: Key(notification.id),
-              background: Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(16.0),
-                ),
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20.0),
-                child: _isDeleting && _deletingId == notification.id
-                    ? const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 2,
-                      )
-                    : const Icon(
-                        Icons.delete_sweep,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-              ),
-              direction: DismissDirection.endToStart,
-              confirmDismiss: (direction) async {
-                return await _showDeleteConfirmation(context);
-              },
-              onDismissed: (direction) {
-                if (authProvider.isAuthenticated) {
-                  setState(() {
-                    _isDeleting = true;
-                    _deletingId = notification.id;
-                  });
-                  
-                  notificationProvider.deleteNotification(
-                    authProvider.firebaseUser!.uid,
-                    notification.id,
-                  ).then((_) {
-                    setState(() {
-                      _isDeleting = false;
-                      _deletingId = null;
-                    });
-                  });
-                }
-              },
-              child: Card(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
-                ),
-                elevation: 2.0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16.0),
-                    border: notification.isRead
-                        ? null
-                        : Border.all(
-                            color: color.withOpacity(0.5),
-                            width: 1.5,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(16.0),
+                    ),
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20.0),
+                    child: _isDeleting && _deletingId == notification.id
+                        ? const CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          )
+                        : const Icon(
+                            Icons.delete_sweep,
+                            color: Colors.white,
+                            size: 28,
                           ),
                   ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16.0),
-                    onTap: () {
-                      if (!notification.isRead && authProvider.isAuthenticated) {
-                        notificationProvider.markNotificationAsRead(
-                          authProvider.firebaseUser!.uid,
-                          notification.id,
-                        );
-                      }
+                  direction: DismissDirection.endToStart,
+                  confirmDismiss: (direction) async {
+                    return await _showDeleteConfirmation(context);
+                  },
+                  onDismissed: (direction) {
+                    if (authProvider.isAuthenticated) {
+                      setState(() {
+                        _isDeleting = true;
+                        _deletingId = notification.id;
+                      });
                       
-                      // Bildirim detaylarını gösterme
-                      _showNotificationDetails(context, notification, color, icon);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // İkon
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: color.withOpacity(0.1),
-                              shape: BoxShape.circle,
+                      notificationProvider.deleteNotification(
+                        authProvider.firebaseUser!.uid,
+                        notification.id,
+                      ).then((_) {
+                        setState(() {
+                          _isDeleting = false;
+                          _deletingId = null;
+                        });
+                      });
+                    }
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.0),
+                    ),
+                    elevation: 2.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16.0),
+                        border: notification.isRead
+                            ? null
+                            : Border.all(
+                                color: color.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16.0),
+                        leading: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Icon(
+                              icon,
+                              color: color,
+                              size: 24,
                             ),
-                            child: Center(
-                              child: Icon(
-                                icon,
-                                color: color,
-                                size: 24,
+                          ),
+                        ),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                notification.title,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: notification.isRead
+                                      ? FontWeight.normal
+                                      : FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          
-                          // İçerik
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            if (!notification.isRead)
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: color,
+                                ),
+                              ),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 6),
+                            Text(
+                              notification.body,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        notification.title,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: notification.isRead
-                                              ? FontWeight.normal
-                                              : FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    if (!notification.isRead)
-                                      Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: color,
-                                        ),
-                                      ),
-                                  ],
+                                Icon(
+                                  Icons.access_time,
+                                  size: 14,
+                                  color: Colors.grey[500],
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(width: 4),
                                 Text(
-                                  notification.body,
+                                  _formatDateTime(notification.timestamp),
                                   style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
                                   ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.access_time,
-                                      size: 14,
-                                      color: Colors.grey[500],
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      _formatDateTime(notification.timestamp),
+                              ],
+                            ),
+                            if (notification.data != null && 
+                                notification.data!.containsKey('location') && 
+                                notification.data!['location'] != null)
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 14,
+                                    color: Colors.grey[500],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      notification.data!['location'],
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey[500],
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    if (notification.data != null && 
-                                        notification.data!.containsKey('location') && 
-                                        notification.data!['location'] != null)
-                                      Row(
-                                        children: [
-                                          const SizedBox(width: 8),
-                                          Icon(
-                                            Icons.location_on,
-                                            size: 14,
-                                            color: Colors.grey[500],
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(
-                                              notification.data!['location'],
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[500],
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                        onTap: () {
+                          if (!notification.isRead && authProvider.isAuthenticated) {
+                            notificationProvider.markNotificationAsRead(
+                              authProvider.firebaseUser!.uid,
+                              notification.id,
+                            );
+                          }
+                          
+                          // Bildirim detaylarını gösterme
+                          _showNotificationDetails(context, notification, color, icon);
+                        },
                       ),
                     ),
                   ),
+                );
+              },
+            ),
+          ),
+          
+          // Daha fazla bildirim varsa "Tümünü Göster" butonu
+          if (hasMoreNotifications)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _showAllNotifications = !_showAllNotifications;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppStyles.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(_showAllNotifications ? Icons.visibility_off : Icons.visibility),
+                    const SizedBox(width: 8),
+                    Text(_showAllNotifications ? 'Son 20 Bildirimi Göster' : 'Tüm Bildirimleri Göster'),
+                  ],
                 ),
               ),
             ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -447,6 +480,76 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
         ],
       ),
     );
+  }
+
+  // Tüm bildirimleri silme onayı
+  void _showDeleteAllConfirmation(
+    BuildContext context,
+    String userId,
+    NotificationProvider notificationProvider,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tüm Bildirimleri Sil'),
+        content: const Text('Tüm bildirimleri silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('İptal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              
+              // Tüm bildirimleri sil
+              setState(() {
+                _isDeleting = true;
+              });
+              
+              // Tüm bildirimleri silme işlemi
+              _deleteAllNotifications(userId, notificationProvider);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Tüm bildirimleri silme işlemi
+  Future<void> _deleteAllNotifications(String userId, NotificationProvider notificationProvider) async {
+    try {
+      await notificationProvider.deleteAllNotifications(userId);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tüm bildirimler silindi'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDeleting = false;
+        });
+      }
+    }
   }
 
   // Bildirim detaylarını gösterme

@@ -68,133 +68,84 @@ class AirQualityService {
     try {
       print('WAQI API\'den veri alınıyor... (Konum: $latitude, $longitude)');
       
-      final url = '$_waqiBaseUrl/geo:$latitude;$longitude/?token=$_waqiApiKey';
-      final response = await _httpClient.get(Uri.parse(url));
+      // Önce Geocoding API ile koordinatları şehir ve ilçe bilgisine dönüştür
+      final geocodingUrl = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=$latitude&longitude=$longitude&localityLanguage=tr';
+      final geocodingResponse = await _httpClient.get(Uri.parse(geocodingUrl));
       
-      print('WAQI API yanıt durumu: ${response.statusCode}');
+      String locationQuery = '';
+      String cityName = '';
+      String districtName = '';
       
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      if (geocodingResponse.statusCode == 200) {
+        final geoData = json.decode(geocodingResponse.body);
         
-        if (data['status'] == 'ok') {
-          final result = data['data'];
-          
-          // API yanıtını logla
-          print('WAQI API yanıtı: ${result.toString().substring(0, min(500, result.toString().length))}...');
-          
-          // AQI değeri
-          final aqi = result['aqi'] is int ? result['aqi'].toDouble() : (result['aqi'] ?? 0.0);
-          
-          // Kirleticiler
-          final Map<String, dynamic> iaqi = result['iaqi'] ?? {};
-          final Map<String, double> pollutants = {};
-          
-          iaqi.forEach((key, value) {
-            if (value is Map && value.containsKey('v')) {
-              final dynamic v = value['v'];
-              if (v is num) {
-                pollutants[key] = v.toDouble();
-              }
-            }
-          });
-          
-          // Kategori belirleme
-          String category = _getAQICategory(aqi);
-          
-          // Konum bilgisi
-          String location = result['city']?['name'] ?? 'Bilinmeyen Konum';
-          
-          // Hava durumu bilgileri
-          Map<String, dynamic> weatherData = {};
-          
-          // Sıcaklık bilgisi
-          if (iaqi.containsKey('t')) {
-            final temp = iaqi['t']?['v'];
-            if (temp is num) {
-              weatherData['temperature'] = temp.toDouble();
-              print('Sıcaklık: ${temp.toDouble()} °C');
-            }
-          }
-          
-          // Nem bilgisi
-          if (iaqi.containsKey('h')) {
-            final humidity = iaqi['h']?['v'];
-            if (humidity is num) {
-              weatherData['humidity'] = humidity.toDouble();
-              print('Nem: %${humidity.toDouble()}');
-            }
-          }
-          
-          // Rüzgar hızı
-          if (iaqi.containsKey('w')) {
-            final windSpeed = iaqi['w']?['v'];
-            if (windSpeed is num) {
-              weatherData['windSpeed'] = windSpeed.toDouble();
-              print('Rüzgar Hızı: ${windSpeed.toDouble()} m/s');
-            }
-          }
-          
-          // Basınç
-          if (iaqi.containsKey('p')) {
-            final pressure = iaqi['p']?['v'];
-            if (pressure is num) {
-              weatherData['pressure'] = pressure.toDouble();
-              print('Basınç: ${pressure.toDouble()} hPa');
-            }
-          }
-          
-          // Tahmin bilgisi
-          if (result.containsKey('forecast') && result['forecast'] is Map) {
-            final forecast = result['forecast'];
-            if (forecast.containsKey('daily') && forecast['daily'] is Map) {
-              final daily = forecast['daily'];
-              
-              // Sıcaklık tahmini
-              if (daily.containsKey('o3') && daily['o3'] is List && daily['o3'].isNotEmpty) {
-                final o3Forecast = daily['o3'];
-                weatherData['o3Forecast'] = o3Forecast;
-                print('Ozon Tahmini: ${o3Forecast.toString().substring(0, min(100, o3Forecast.toString().length))}...');
-              }
-              
-              // PM2.5 tahmini
-              if (daily.containsKey('pm25') && daily['pm25'] is List && daily['pm25'].isNotEmpty) {
-                final pm25Forecast = daily['pm25'];
-                weatherData['pm25Forecast'] = pm25Forecast;
-                print('PM2.5 Tahmini: ${pm25Forecast.toString().substring(0, min(100, pm25Forecast.toString().length))}...');
-              }
-            }
-          }
-          
-          // Zaman bilgisi
-          if (result.containsKey('time') && result['time'] is Map) {
-            final time = result['time'];
-            if (time.containsKey('s')) {
-              weatherData['measurementTime'] = time['s'];
-              print('Ölçüm Zamanı: ${time['s']}');
-            }
-          }
-          
-          return AirQualityModel(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            latitude: latitude,
-            longitude: longitude,
-            location: location,
-            timestamp: DateTime.now(),
-            aqi: aqi,
-            pollutants: pollutants,
-            category: category,
-            source: SOURCE_WAQI,
-            additionalData: weatherData.isNotEmpty ? {
-              'weatherData': weatherData,
-              'hasWeatherData': true,
-            } : null,
-          );
-        } else {
-          print('WAQI API yanıt hatası: ${data['status']}');
-          return null;
+        // Şehir bilgisi
+        cityName = geoData['city'] ?? '';
+        
+        // İlçe bilgisi
+        districtName = geoData['locality'] ?? geoData['district'] ?? '';
+        
+        print('Konum detayları: Şehir=$cityName, İlçe=$districtName');
+        
+        // Konum sorgusu oluştur
+        if (cityName.isNotEmpty && districtName.isNotEmpty) {
+          // Önce şehir ve ilçe ile deneyelim
+          locationQuery = '$cityName/$districtName'.toLowerCase();
+          print('Şehir ve ilçe ile sorgu yapılacak: $locationQuery');
+        } else if (cityName.isNotEmpty) {
+          // Sadece şehir ile deneyelim
+          locationQuery = cityName.toLowerCase();
+          print('Sadece şehir ile sorgu yapılacak: $locationQuery');
         }
+      }
+      
+      // Sorgu stratejisi:
+      // 1. Şehir/ilçe bilgisi varsa, önce bunu dene
+      // 2. Sadece şehir bilgisi varsa, bunu dene
+      // 3. Son çare olarak koordinat kullan
+      
+      http.Response? response;
+      String? usedMethod;
+      
+      // 1. Şehir/ilçe bilgisi ile dene
+      if (locationQuery.isNotEmpty && locationQuery.contains('/')) {
+        final url = '$_waqiBaseUrl/$locationQuery/?token=$_waqiApiKey';
+        print('1. Deneme: Şehir/ilçe sorgusu: $url');
+        response = await _httpClient.get(Uri.parse(url));
+        
+        final data = json.decode(response.body);
+        if (response.statusCode == 200 && data['status'] == 'ok') {
+          usedMethod = 'Şehir/ilçe sorgusu';
+          print('Şehir/ilçe sorgusu başarılı: $locationQuery');
+        }
+      }
+      
+      // 2. Sadece şehir ile dene
+      if ((response == null || json.decode(response.body)['status'] != 'ok') && cityName.isNotEmpty) {
+        final url = '$_waqiBaseUrl/$cityName/?token=$_waqiApiKey';
+        print('2. Deneme: Şehir sorgusu: $url');
+        response = await _httpClient.get(Uri.parse(url));
+        
+        final data = json.decode(response.body);
+        if (response.statusCode == 200 && data['status'] == 'ok') {
+          usedMethod = 'Şehir sorgusu';
+          print('Şehir sorgusu başarılı: $cityName');
+        }
+      }
+      
+      // 3. Son çare olarak koordinat kullan
+      if (response == null || json.decode(response.body)['status'] != 'ok') {
+        final url = '$_waqiBaseUrl/geo:$latitude;$longitude/?token=$_waqiApiKey';
+        print('3. Deneme: Koordinat sorgusu: $url');
+        response = await _httpClient.get(Uri.parse(url));
+        usedMethod = 'Koordinat sorgusu';
+      }
+      
+      if (response != null) {
+        print('Kullanılan yöntem: $usedMethod');
+        return _processWaqiResponse(response, latitude, longitude);
       } else {
-        print('WAQI API HTTP hatası: ${response.statusCode}');
+        print('Tüm sorgular başarısız oldu');
         return null;
       }
     } catch (e) {
@@ -282,6 +233,147 @@ class AirQualityService {
         return Colors.red;
       default:
         return Colors.grey;
+    }
+  }
+
+  // WAQI API yanıtını işleme
+  AirQualityModel? _processWaqiResponse(http.Response response, double latitude, double longitude) {
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      
+      if (data['status'] == 'ok') {
+        final result = data['data'];
+        
+        // API yanıtını logla
+        print('WAQI API yanıtı: ${result.toString().substring(0, min(500, result.toString().length))}...');
+        
+        // AQI değeri
+        final aqi = result['aqi'] is int ? result['aqi'].toDouble() : (result['aqi'] ?? 0.0);
+        
+        // Kirleticiler
+        final Map<String, dynamic> iaqi = result['iaqi'] ?? {};
+        final Map<String, double> pollutants = {};
+        
+        iaqi.forEach((key, value) {
+          if (value is Map && value.containsKey('v')) {
+            final dynamic v = value['v'];
+            if (v is num) {
+              pollutants[key] = v.toDouble();
+            }
+          }
+        });
+        
+        // Kategori belirleme
+        String category = _getAQICategory(aqi);
+        
+        // Konum bilgisi
+        String location = result['city']?['name'] ?? 'Bilinmeyen Konum';
+        
+        // Hava durumu bilgileri
+        Map<String, dynamic> weatherData = {};
+        
+        // Sıcaklık bilgisi
+        if (iaqi.containsKey('t')) {
+          final temp = iaqi['t']?['v'];
+          if (temp is num) {
+            weatherData['temperature'] = temp.toDouble();
+            print('Sıcaklık: ${temp.toDouble()} °C');
+          }
+        }
+        
+        // Nem bilgisi
+        if (iaqi.containsKey('h')) {
+          final humidity = iaqi['h']?['v'];
+          if (humidity is num) {
+            weatherData['humidity'] = humidity.toDouble();
+            print('Nem: %${humidity.toDouble()}');
+          }
+        }
+        
+        // Rüzgar hızı
+        if (iaqi.containsKey('w')) {
+          final windSpeed = iaqi['w']?['v'];
+          if (windSpeed is num) {
+            weatherData['windSpeed'] = windSpeed.toDouble();
+            print('Rüzgar Hızı: ${windSpeed.toDouble()} m/s');
+          }
+        }
+        
+        // Basınç
+        if (iaqi.containsKey('p')) {
+          final pressure = iaqi['p']?['v'];
+          if (pressure is num) {
+            weatherData['pressure'] = pressure.toDouble();
+            print('Basınç: ${pressure.toDouble()} hPa');
+          }
+        }
+        
+        // Tahmin bilgisi
+        if (result.containsKey('forecast') && result['forecast'] is Map) {
+          final forecast = result['forecast'];
+          if (forecast.containsKey('daily') && forecast['daily'] is Map) {
+            final daily = forecast['daily'];
+            
+            // Sıcaklık tahmini
+            if (daily.containsKey('o3') && daily['o3'] is List && daily['o3'].isNotEmpty) {
+              final o3Forecast = daily['o3'];
+              weatherData['o3Forecast'] = o3Forecast;
+              print('Ozon Tahmini: ${o3Forecast.toString().substring(0, min(100, o3Forecast.toString().length))}...');
+            }
+            
+            // PM2.5 tahmini
+            if (daily.containsKey('pm25') && daily['pm25'] is List && daily['pm25'].isNotEmpty) {
+              final pm25Forecast = daily['pm25'];
+              weatherData['pm25Forecast'] = pm25Forecast;
+              print('PM2.5 Tahmini: ${pm25Forecast.toString().substring(0, min(100, pm25Forecast.toString().length))}...');
+            }
+            
+            // Tüm tahmin verilerini ekle
+            weatherData['forecast'] = daily;
+            print('Tahmin verileri eklendi');
+            
+            // Haftalık tahmin verisi olduğunu belirt
+            weatherData['hasWeeklyForecast'] = true;
+          }
+        }
+        
+        // Zaman bilgisi
+        if (result.containsKey('time') && result['time'] is Map) {
+          final time = result['time'];
+          if (time.containsKey('s')) {
+            weatherData['measurementTime'] = time['s'];
+            print('Ölçüm Zamanı: ${time['s']}');
+          }
+        }
+        
+        // Şu anki zamanı ekle (ölçüm zamanı yerine)
+        final now = DateTime.now();
+        final currentTime = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+        weatherData['measurementTime'] = currentTime;
+        print('Güncel Zaman: $currentTime');
+        
+        return AirQualityModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          latitude: latitude,
+          longitude: longitude,
+          location: location,
+          timestamp: DateTime.now(),
+          aqi: aqi,
+          pollutants: pollutants,
+          category: category,
+          source: SOURCE_WAQI,
+          additionalData: weatherData.isNotEmpty ? {
+            'weatherData': weatherData,
+            'hasWeatherData': true,
+          } : null,
+        );
+      } else {
+        print('WAQI API yanıt hatası: ${data['status']}');
+        return null;
+      }
+    } else {
+      print('WAQI API HTTP hatası: ${response.statusCode}');
+      return null;
     }
   }
 } 

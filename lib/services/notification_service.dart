@@ -102,6 +102,9 @@ class NotificationService {
     required double aqi,
     required String category,
   }) async {
+    print('NotificationService: Tehlikeli hava kalitesi bildirimi gönderiliyor...');
+    print('NotificationService: userId: $userId, location: $location, aqi: $aqi, category: $category');
+    
     // Bildirim modeli oluştur
     final notification = NotificationModel.createDangerousAirQualityNotification(
       userId: userId,
@@ -111,10 +114,15 @@ class NotificationService {
     );
     
     // Firestore'a kaydet
-    await _firebaseService.saveNotification(notification);
+    try {
+      await _firebaseService.saveNotification(notification);
+      print('NotificationService: Bildirim Firestore\'a kaydedildi: ${notification.id}');
+    } catch (e) {
+      print('NotificationService: Bildirim kaydedilirken hata oluştu: $e');
+    }
     
     // Not: Artık bildirimler Firebase Cloud Functions tarafından otomatik olarak gönderilecek
-    print('Tehlikeli hava kalitesi bildirimi Firestore\'a kaydedildi: ${notification.title}');
+    print('NotificationService: Tehlikeli hava kalitesi bildirimi Firestore\'a kaydedildi: ${notification.title}');
     
     // Kullanıcı arayüzünde bildirim göstermek için bir yöntem
     // Bu, uygulama açıkken kullanılabilir

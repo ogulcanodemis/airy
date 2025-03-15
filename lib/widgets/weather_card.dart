@@ -74,12 +74,25 @@ class WeatherCard extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      Text(
-                        _formatMeasurementTime(weatherData['measurementTime']),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white70,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text(
+                            'Güncellendi',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            _formatMeasurementTime(weatherData['measurementTime']),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -209,8 +222,9 @@ class WeatherCard extends StatelessWidget {
     
     try {
       final dateTime = DateTime.parse(timeString);
-      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
     } catch (e) {
+      // Eğer parse edilemezse, direkt olarak string'i döndür
       return timeString;
     }
   }

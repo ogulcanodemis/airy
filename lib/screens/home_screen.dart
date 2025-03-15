@@ -14,6 +14,7 @@ import '../widgets/advice_card.dart';
 import '../widgets/pollen_card.dart';
 import '../widgets/weather_card.dart';
 import '../widgets/animated_widgets.dart';
+import '../widgets/weekly_forecast_card.dart';
 import 'auth/login_screen.dart';
 import 'settings_screen.dart';
 import 'notifications_screen.dart';
@@ -53,6 +54,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     final userId = authProvider.firebaseUser!.uid;
     
+    print('HomeScreen: Kullanıcı kimliği: $userId');
+    
     // Ayarları al
     await Provider.of<SettingsProvider>(context, listen: false).getUserSettings(userId);
     
@@ -88,7 +91,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
     
     // Bildirimleri dinlemeye başla
+    print('HomeScreen: Bildirimleri dinlemeye başlıyor...');
     Provider.of<NotificationProvider>(context, listen: false).startListeningNotifications(userId);
+    print('HomeScreen: Bildirim dinleme başlatıldı');
   }
 
   // Verileri yenileme
@@ -358,6 +363,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   WeatherCard(
                     weatherData: airQualityProvider.currentAirQuality!.additionalData!['weatherData'],
                     temperatureUnit: settingsProvider.settings?.temperatureUnit ?? 'celsius',
+                  ),
+                
+                const SizedBox(height: 16),
+                
+                // Haftalık tahmin kartı - WAQI API'den gelen tahmin verileri varsa göster
+                if (airQualityProvider.hasAirQualityData && 
+                    airQualityProvider.currentAirQuality!.additionalData != null &&
+                    airQualityProvider.currentAirQuality!.additionalData!['weatherData'] != null &&
+                    airQualityProvider.currentAirQuality!.additionalData!['weatherData']['hasWeeklyForecast'] == true)
+                  WeeklyForecastCard(
+                    forecastData: airQualityProvider.currentAirQuality!.additionalData!['weatherData']['forecast'],
+                    temperatureUnit: settingsProvider.settings?.temperatureUnit ?? 'celsius',
+                    location: airQualityProvider.currentAirQuality!.location,
                   ),
                 
                 const SizedBox(height: 16),
