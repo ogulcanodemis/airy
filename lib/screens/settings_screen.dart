@@ -7,6 +7,8 @@ import '../services/air_quality_service.dart';
 import '../services/location_service.dart';
 import '../styles/app_styles.dart';
 import '../services/platform_service.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -462,6 +464,9 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
                       // Gizlilik politikası sayfasına yönlendirme
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                      );
                     },
                   ),
                   const Divider(),
@@ -470,6 +475,9 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
                       // Kullanım koşulları sayfasına yönlendirme
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
+                      );
                     },
                   ),
                 ],
