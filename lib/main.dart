@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'services/notification_service.dart';
 import 'services/background_service.dart';
 import 'services/ad_service.dart';
+import 'services/purchase_service.dart';
 import 'screens/splash_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/air_quality_provider.dart';
@@ -22,6 +23,9 @@ void main() async {
   
   // AdMob'u başlat
   await AdService().initialize();
+  
+  // Satın alma servisini başlat
+  await PurchaseService().initialize();
   
   // Bildirim servisini başlat
   await NotificationService().init();

@@ -6,8 +6,9 @@ import '../providers/location_provider.dart';
 import '../providers/notification_provider.dart';
 import '../services/air_quality_service.dart';
 import '../services/location_service.dart';
-import '../styles/app_styles.dart';
 import '../services/platform_service.dart';
+import '../services/purchase_service.dart';
+import '../styles/app_styles.dart';
 import '../widgets/animated_widgets.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
@@ -916,77 +917,108 @@ class SettingsScreen extends StatelessWidget {
   // Premium satın alma dialog'u
   void _showPremiumDialog(BuildContext context) {
     final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final purchaseService = PurchaseService();
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.workspace_premium, color: Color(0xFFFFD700)),
-            SizedBox(width: 8),
-            Text('Premium Üyelik'),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Premium üyelik avantajları:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.workspace_premium, color: Color(0xFFFFD700)),
+                SizedBox(width: 8),
+                Text('Premium Üyelik'),
+              ],
             ),
-            SizedBox(height: 8),
-            Text('• Tüm reklamları kaldırır'),
-            Text('• Uygulamayı kesintisiz kullanabilirsiniz'),
-            Text('• Gelecekte eklenecek özel özelliklere erişim'),
-            SizedBox(height: 16),
-            Text(
-              'Premium üyelik ücreti: 29,99 ₺',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Premium üyelik avantajları:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text('• Tüm reklamları kaldırır'),
+                const Text('• Uygulamayı kesintisiz kullanabilirsiniz'),
+                const Text('• Gelecekte eklenecek özel özelliklere erişim'),
+                const SizedBox(height: 16),
+                FutureBuilder(
+                  future: purchaseService.initialize(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    
+                    if (!purchaseService.isAvailable) {
+                      return const Text(
+                        'Satın alma servisi şu anda kullanılamıyor.',
+                        style: TextStyle(color: Colors.red),
+                      );
+                    }
+                    
+                    final product = purchaseService.getRemoveAdsProduct();
+                    
+                    if (product == null) {
+                      return const Text(
+                        'Ürün bilgisi yüklenemedi.',
+                        style: TextStyle(color: Colors.red),
+                      );
+                    }
+                    
+                    return Text(
+                      'Premium üyelik ücreti: ${product.price}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              // Burada gerçek ödeme işlemi yapılacak
-              // Şimdilik sadece premium durumunu true yapıyoruz
-              
-              // Premium durumunu güncelle
-              if (settingsProvider.settings != null) {
-                final updatedSettings = settingsProvider.settings!.copyWith(
-                  isPremium: true,
-                );
-                
-                // Firestore'da güncelle
-                await settingsProvider.updateUserSettings(updatedSettings);
-                
-                if (context.mounted) {
+            actions: [
+              TextButton(
+                onPressed: () {
                   Navigator.of(context).pop();
+                },
+                child: const Text('İptal'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  // Satın alma işlemini başlat
+                  final bool success = await purchaseService.purchaseRemoveAds();
                   
-                  // Başarılı mesajı göster
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Premium üyelik başarıyla etkinleştirildi!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD700),
-              foregroundColor: Colors.black,
-            ),
-            child: const Text('Satın Al'),
-          ),
-        ],
+                  if (success) {
+                    // Satın alma işlemi başarıyla başlatıldı
+                    // Sonuç, purchaseStream üzerinden dinleniyor
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Satın alma işlemi başlatıldı'),
+                        backgroundColor: Colors.blue,
+                      ),
+                    );
+                  } else {
+                    // Satın alma işlemi başlatılamadı
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Satın alma işlemi başlatılamadı'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                  
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFD700),
+                  foregroundColor: Colors.black,
+                ),
+                child: const Text('Satın Al'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
