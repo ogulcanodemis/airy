@@ -11,6 +11,7 @@ class UserSettingsModel {
   final Map<String, bool> enabledApiSources; // Etkinleştirilmiş API kaynakları
   final String preferredApiSource; // Tercih edilen API kaynağı
   final bool mergeApiResults; // API sonuçlarını birleştirme
+  final bool isPremium; // Premium kullanıcı durumu
 
   UserSettingsModel({
     required this.id,
@@ -29,6 +30,7 @@ class UserSettingsModel {
     },
     this.preferredApiSource = 'WAQI', // Varsayılan olarak WAQI API'si
     this.mergeApiResults = false, // Varsayılan olarak birleştirme kapalı
+    this.isPremium = false, // Varsayılan olarak premium değil
   });
 
   // Firestore'dan veri almak için factory constructor
@@ -50,6 +52,7 @@ class UserSettingsModel {
       }),
       preferredApiSource: data['preferredApiSource'] ?? 'WAQI',
       mergeApiResults: data['mergeApiResults'] ?? false,
+      isPremium: data['isPremium'] ?? false,
     );
   }
 
@@ -67,6 +70,7 @@ class UserSettingsModel {
       'enabledApiSources': enabledApiSources,
       'preferredApiSource': preferredApiSource,
       'mergeApiResults': mergeApiResults,
+      'isPremium': isPremium,
     };
   }
 
@@ -82,6 +86,7 @@ class UserSettingsModel {
     Map<String, bool>? enabledApiSources,
     String? preferredApiSource,
     bool? mergeApiResults,
+    bool? isPremium,
   }) {
     return UserSettingsModel(
       id: this.id,
@@ -96,6 +101,7 @@ class UserSettingsModel {
       enabledApiSources: enabledApiSources ?? this.enabledApiSources,
       preferredApiSource: preferredApiSource ?? this.preferredApiSource,
       mergeApiResults: mergeApiResults ?? this.mergeApiResults,
+      isPremium: isPremium ?? this.isPremium,
     );
   }
 
@@ -118,6 +124,7 @@ class UserSettingsModel {
       },
       preferredApiSource: 'WAQI',
       mergeApiResults: false,
+      isPremium: false,
     );
   }
   

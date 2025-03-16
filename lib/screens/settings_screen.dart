@@ -243,6 +243,71 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ),
                     
+                    const SizedBox(height: 16),
+                    
+                    // Premium Üyelik Kartı
+                    _buildSettingsCard(
+                      title: 'Premium Üyelik',
+                      icon: Icons.workspace_premium,
+                      iconColor: const Color(0xFFFFD700), // Altın rengi
+                      children: [
+                        Consumer<SettingsProvider>(
+                          builder: (context, settingsProvider, child) {
+                            final isPremium = settingsProvider.settings?.isPremium ?? false;
+                            
+                            return Column(
+                              children: [
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFD700).withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(Icons.ads_click, color: Color(0xFFFFD700)),
+                                  ),
+                                  title: const Text(
+                                    'Reklamları Kaldır',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: Text(
+                                    isPremium 
+                                        ? 'Premium üyeliğiniz aktif, reklamlar kapalı'
+                                        : 'Reklamları kaldırmak için premium üyelik satın alın',
+                                  ),
+                                  trailing: isPremium
+                                      ? const Icon(Icons.check_circle, color: Colors.green)
+                                      : ElevatedButton(
+                                          onPressed: () {
+                                            // Premium satın alma işlemi burada yapılacak
+                                            _showPremiumDialog(context);
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFFFFD700),
+                                            foregroundColor: Colors.black,
+                                          ),
+                                          child: const Text('Satın Al'),
+                                        ),
+                                ),
+                                
+                                const Divider(),
+                                
+                                const Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'Premium üyelik ile tüm reklamları kaldırabilir ve uygulamayı kesintisiz kullanabilirsiniz. Ayrıca gelecekte eklenecek özel özelliklere de erişim kazanırsınız.',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
                     // API Kaynak Ayarları
                     _buildSettingsCard(
                       title: 'Veri Kaynağı Ayarları',
@@ -843,6 +908,84 @@ class SettingsScreen extends StatelessWidget {
           ...children,
           
           const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+  
+  // Premium satın alma dialog'u
+  void _showPremiumDialog(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.workspace_premium, color: Color(0xFFFFD700)),
+            SizedBox(width: 8),
+            Text('Premium Üyelik'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Premium üyelik avantajları:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text('• Tüm reklamları kaldırır'),
+            Text('• Uygulamayı kesintisiz kullanabilirsiniz'),
+            Text('• Gelecekte eklenecek özel özelliklere erişim'),
+            SizedBox(height: 16),
+            Text(
+              'Premium üyelik ücreti: 29,99 ₺',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // Burada gerçek ödeme işlemi yapılacak
+              // Şimdilik sadece premium durumunu true yapıyoruz
+              
+              // Premium durumunu güncelle
+              if (settingsProvider.settings != null) {
+                final updatedSettings = settingsProvider.settings!.copyWith(
+                  isPremium: true,
+                );
+                
+                // Firestore'da güncelle
+                await settingsProvider.updateUserSettings(updatedSettings);
+                
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  
+                  // Başarılı mesajı göster
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Premium üyelik başarıyla etkinleştirildi!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFD700),
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('Satın Al'),
+          ),
         ],
       ),
     );

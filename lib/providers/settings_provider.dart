@@ -305,4 +305,26 @@ class SettingsProvider with ChangeNotifier {
     _error = '';
     notifyListeners();
   }
+  
+  // Kullanıcı ayarlarını güncelleme (genel metod)
+  Future<void> updateUserSettings(UserSettingsModel updatedSettings) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _firebaseService.updateUserSettings(updatedSettings);
+      
+      // Premium durumu değiştiyse arka plan görevlerini güncelle
+      if (_settings?.isPremium != updatedSettings.isPremium) {
+        await _backgroundService.updateTasksBasedOnSettings(updatedSettings);
+      }
+      
+      _settings = updatedSettings;
+    } catch (e) {
+      _error = 'Kullanıcı ayarları güncellenirken hata oluştu: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
 } 

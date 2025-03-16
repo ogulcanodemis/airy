@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/air_quality_provider.dart';
+import '../providers/settings_provider.dart';
 import '../models/air_quality_model.dart';
 import '../styles/app_styles.dart';
 import '../widgets/animated_widgets.dart';
 import '../widgets/air_quality_gauge.dart';
+import '../services/ad_service.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AirQualityDetailsScreen extends StatefulWidget {
   final AirQualityModel? airQuality;
@@ -153,6 +156,25 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _shareAirQualityData(context),
+        backgroundColor: AppStyles.primaryColor,
+        child: const Icon(Icons.share),
+      ),
+      bottomNavigationBar: Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, child) {
+          // Premium kullanıcılar için reklamları gösterme
+          final isPremium = settingsProvider.settings?.isPremium ?? false;
+          if (isPremium) {
+            return const SizedBox.shrink();
+          }
+          
+          // Banner reklamı göster
+          return const BannerAdWidget(
+            adSize: AdSize.banner,
+          );
+        },
       ),
     );
   }

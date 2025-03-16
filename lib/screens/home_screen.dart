@@ -6,6 +6,7 @@ import '../providers/air_quality_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/notification_provider.dart';
 import '../services/air_quality_service.dart';
+import '../services/ad_service.dart';
 import '../styles/app_styles.dart';
 import '../widgets/user_profile_card.dart';
 import '../widgets/location_card.dart';
@@ -19,6 +20,7 @@ import 'auth/login_screen.dart';
 import 'settings_screen.dart';
 import 'notifications_screen.dart';
 import 'air_quality_details_screen.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -505,6 +507,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           backgroundColor: AppStyles.primaryColor,
           child: const Icon(Icons.refresh),
         ),
+      ),
+      bottomNavigationBar: Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, child) {
+          // Premium kullanıcılar için reklamları gösterme
+          final isPremium = settingsProvider.settings?.isPremium ?? false;
+          if (isPremium) {
+            return const SizedBox.shrink();
+          }
+          
+          // Banner reklamı göster
+          return const BannerAdWidget(
+            adSize: AdSize.banner,
+          );
+        },
       ),
     );
   }

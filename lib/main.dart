@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'services/notification_service.dart';
 import 'services/background_service.dart';
+import 'services/ad_service.dart';
 import 'screens/splash_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/air_quality_provider.dart';
@@ -18,6 +19,9 @@ void main() async {
   
   // Firebase'i başlat
   await Firebase.initializeApp();
+  
+  // AdMob'u başlat
+  await AdService().initialize();
   
   // Bildirim servisini başlat
   await NotificationService().init();
