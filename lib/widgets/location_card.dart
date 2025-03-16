@@ -25,7 +25,14 @@ class LocationCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: AppStyles.primaryGradient,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF82E0F9), // Açık mavi
+            Color(0xFF5BBCD9), // Açık mavinin koyu tonu
+          ],
+        ),
         boxShadow: AppStyles.cardShadow,
       ),
       child: ClipRRect(
@@ -122,8 +129,8 @@ class LocationCard extends StatelessWidget {
             icon: const Icon(Icons.location_searching),
             label: const Text('Konum İzni Ver'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppStyles.primaryColor,
+              backgroundColor: const Color(0xFFF9CC3E), // Sarı
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
@@ -145,7 +152,7 @@ class LocationCard extends StatelessWidget {
           children: [
             const Icon(
               Icons.place,
-              color: Colors.white70,
+              color: Colors.white,
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -215,7 +222,7 @@ class LocationCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -225,14 +232,14 @@ class LocationCard extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: Colors.white70,
+                color: const Color(0xFFF9CC3E),
                 size: 16,
               ),
               const SizedBox(width: 6),
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white70,
+                  color: Color(0xFF82E0F9),
                   fontSize: 14,
                 ),
               ),
@@ -242,7 +249,7 @@ class LocationCard extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
+              color: Colors.black87,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -256,7 +263,7 @@ class LocationCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -266,14 +273,14 @@ class LocationCard extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: Colors.white70,
+                color: const Color(0xFFF9CC3E),
                 size: 16,
               ),
               const SizedBox(width: 6),
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white70,
+                  color: Color(0xFF82E0F9),
                   fontSize: 14,
                 ),
               ),
@@ -283,7 +290,7 @@ class LocationCard extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
+              color: Colors.black87,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),

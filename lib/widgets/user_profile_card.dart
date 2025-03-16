@@ -25,8 +25,8 @@ class UserProfileCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF6A11CB),
-            Color(0xFF2575FC),
+            Color(0xFFF9CC3E), // Sarı
+            Color(0xFFE5B82A), // Sarının koyu tonu
           ],
         ),
         boxShadow: AppStyles.cardShadow,
@@ -35,13 +35,17 @@ class UserProfileCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
-            // Parçacık animasyonu
-            ParticleAnimation(
-              color: Colors.white,
-              particleCount: 15,
-              child: Container(
-                width: double.infinity,
-                height: 180, // Sabit bir yükseklik belirle
+            // Dalga animasyonu
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 60,
+              child: WaveAnimation(
+                color: Colors.white.withOpacity(0.2),
+                height: 10,
+                speed: 0.5,
+                child: const SizedBox.expand(),
               ),
             ),
             
@@ -60,7 +64,7 @@ class UserProfileCard extends StatelessWidget {
                         duration: const Duration(seconds: 3),
                         child: CircleAvatar(
                           radius: 35,
-                          backgroundColor: Colors.white.withOpacity(0.2),
+                          backgroundColor: const Color(0xFF82E0F9).withOpacity(0.8), // Açık mavi
                           child: Text(
                             user.displayName.isNotEmpty
                                 ? user.displayName[0].toUpperCase()
@@ -68,7 +72,7 @@ class UserProfileCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 30,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Colors.white, // Beyaz metin rengi
                             ),
                           ),
                         ),
@@ -86,7 +90,7 @@ class UserProfileCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Colors.white, // Beyaz metin rengi
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -96,7 +100,7 @@ class UserProfileCard extends StatelessWidget {
                               user.email,
                               style: const TextStyle(
                                 fontSize: 14,
-                                color: Colors.white70,
+                                color: Colors.white70, // Biraz daha açık beyaz
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -106,7 +110,7 @@ class UserProfileCard extends StatelessWidget {
                               'Son giriş: ${_formatDateTime(user.lastLoginAt)}',
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: Colors.white60,
+                                color: Colors.white60, // Daha da açık beyaz
                               ),
                             ),
                           ],
@@ -157,8 +161,8 @@ class UserProfileCard extends StatelessWidget {
       icon: Icon(icon, size: 18),
       label: Text(label),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white.withOpacity(0.2),
-        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFF82E0F9), // Açık mavi
+        foregroundColor: Colors.white, // Beyaz metin rengi
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         shape: RoundedRectangleBorder(

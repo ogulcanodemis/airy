@@ -47,13 +47,13 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade300,
-              Colors.blue.shade700,
+              Color(0xFF82E0F9), // Açık mavi
+              Color(0xFF5BBCD9), // Koyu mavi
             ],
           ),
         ),
@@ -61,17 +61,31 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Logo
-            Icon(
-              Icons.air,
-              size: 100,
-              color: Colors.white,
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF82E0F9).withOpacity(0.3),
+                    blurRadius: 15,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Image.asset(
+                'assets/icons/app-icon.png',
+                width: 100,
+                height: 100,
+              ),
             ),
             
             const SizedBox(height: 20),
             
             // Uygulama adı
             const Text(
-              'Hava Kalitesi',
+              'Airy',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,

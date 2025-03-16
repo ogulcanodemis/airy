@@ -3,12 +3,15 @@ import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/location_provider.dart';
+import '../providers/notification_provider.dart';
 import '../services/air_quality_service.dart';
 import '../services/location_service.dart';
 import '../styles/app_styles.dart';
 import '../services/platform_service.dart';
+import '../widgets/animated_widgets.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
+import 'auth/login_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -26,8 +29,24 @@ class SettingsScreen extends StatelessWidget {
           backgroundColor: AppStyles.primaryColor,
           foregroundColor: Colors.white,
         ),
-        body: const Center(
-          child: Text('Ayarları görüntülemek için giriş yapmalısınız'),
+        body: AnimatedBackground(
+          color1: const Color(0xFF82E0F9), // Açık mavi
+          color2: const Color(0xFFF9CC3E), // Sarı
+          bubbleCount: 8,
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.lock, size: 80, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Ayarları görüntülemek için giriş yapmalısınız',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
@@ -39,8 +58,23 @@ class SettingsScreen extends StatelessWidget {
           backgroundColor: AppStyles.primaryColor,
           foregroundColor: Colors.white,
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
+        body: AnimatedBackground(
+          color1: const Color(0xFF82E0F9), // Açık mavi
+          color2: const Color(0xFFF9CC3E), // Sarı
+          bubbleCount: 8,
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Ayarlar yükleniyor...',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
@@ -52,19 +86,38 @@ class SettingsScreen extends StatelessWidget {
           backgroundColor: AppStyles.primaryColor,
           foregroundColor: Colors.white,
         ),
-        body: Center(
+        body: AnimatedBackground(
+          color1: const Color(0xFF82E0F9), // Açık mavi
+          color2: const Color(0xFFF9CC3E), // Sarı
+          bubbleCount: 8,
+          child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Ayarlar yüklenemedi'),
+                const Icon(Icons.error_outline, size: 80, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text(
+                  'Ayarlar yüklenemedi',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               const SizedBox(height: 16),
-              ElevatedButton(
+                ElevatedButton.icon(
                 onPressed: () {
                   settingsProvider.getUserSettings(authProvider.firebaseUser!.uid);
                 },
-                child: const Text('Tekrar Dene'),
-              ),
-            ],
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppStyles.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Tekrar Dene'),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -73,42 +126,142 @@ class SettingsScreen extends StatelessWidget {
     final settings = settingsProvider.settings!;
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ayarlar'),
-        backgroundColor: AppStyles.primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
+      backgroundColor: const Color(0xFFFFFFFF), // Beyaz arka plan
+      body: AnimatedBackground(
+        color1: const Color(0xFF82E0F9), // Açık mavi
+        color2: const Color(0xFFF9CC3E), // Sarı
+        bubbleCount: 8,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Üst kısım - Başlık ve geri butonu
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Geri butonu
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppStyles.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: AppStyles.primaryColor,
+                          size: 26,
+                        ),
+                        tooltip: 'Geri',
+                        padding: const EdgeInsets.all(10.0),
+                        constraints: const BoxConstraints(
+                          minWidth: 46,
+                          minHeight: 46,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    
+                    // Başlık
+                    const Text(
+                      'Ayarlar',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppStyles.primaryColor,
+                      ),
+                    ),
+                    
+                    // Sağ tarafta boşluk bırakmak için
+                    const SizedBox(width: 46),
+                  ],
+                ),
+              ),
+              
+              // Ana içerik
+              Expanded(
+                child: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // API Kaynak Ayarları
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+                    // Profil özeti
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF82E0F9), Color(0xFF5BBCD9)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.white,
+                            child: Text(
+                              authProvider.userModel?.displayName.substring(0, 1).toUpperCase() ?? 'U',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppStyles.primaryColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Veri Kaynağı Ayarları',
-                    style: TextStyle(
+                                Text(
+                                  authProvider.userModel?.displayName ?? 'Kullanıcı',
+                                  style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  authProvider.userModel?.email ?? '',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // WAQI API bilgisi
-                  ListTile(
-                    title: Row(
+                    
+                    // API Kaynak Ayarları
+                    _buildSettingsCard(
+                      title: 'Veri Kaynağı Ayarları',
+                      icon: Icons.cloud_done,
+                      iconColor: const Color(0xFF82E0F9),
                       children: [
-                        Icon(Icons.public, color: Colors.blue, size: 20),
-                        const SizedBox(width: 8),
-                        const Text('WAQI API'),
-                      ],
+                        // WAQI API bilgisi
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF82E0F9).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.public, color: Color(0xFF5BBCD9), size: 24),
+                          ),
+                          title: const Text(
+                            'WAQI API',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: const Text('Dünya Hava Kalitesi İndeksi verilerini kullanıyorsunuz'),
                     trailing: const Icon(Icons.check_circle, color: Colors.green),
@@ -125,37 +278,30 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-            ),
           ),
           
           const SizedBox(height: 16),
           
           // Arka plan konum izinleri
-          Card(
-            margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                    _buildSettingsCard(
+                      title: 'Arka Plan Konum İzinleri',
+                      icon: Icons.location_on,
+                      iconColor: const Color(0xFFF9CC3E),
                 children: [
-                  const Text(
-                    'Arka Plan Konum İzinleri',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          child: Text(
                     'Uygulamanın arka planda çalışırken de konum bilgilerinize erişmesi için gerekli izinleri kontrol edin.',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          child: ElevatedButton.icon(
                     onPressed: () async {
                       final locationService = LocationService();
                       final hasPermission = await locationService.checkBackgroundLocationPermission(context);
@@ -165,14 +311,14 @@ class SettingsScreen extends StatelessWidget {
                         final platformService = PlatformService();
                         final success = await platformService.startLocationService();
                         
-                        if (success) {
+                                if (success && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Arka plan konum servisi başlatıldı'),
                               backgroundColor: Colors.green,
                             ),
                           );
-                        } else {
+                                } else if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Arka plan konum servisi başlatılamadı'),
@@ -183,51 +329,76 @@ class SettingsScreen extends StatelessWidget {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppStyles.primaryColor,
+                              backgroundColor: const Color(0xFFF9CC3E),
                       foregroundColor: Colors.white,
-                    ),
-                    child: const Text('İzinleri Kontrol Et'),
-                  ),
-                ],
-              ),
-            ),
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                            icon: const Icon(Icons.security),
+                            label: const Text('İzinleri Kontrol Et'),
+                          ),
+                        ),
+                      ],
           ),
           
           const SizedBox(height: 16),
           
           // Bildirim ayarları
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                    _buildSettingsCard(
+                      title: 'Bildirim Ayarları',
+                      icon: Icons.notifications_active,
+                      iconColor: Colors.red,
                 children: [
-                  const Text(
-                    'Bildirim Ayarları',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    title: const Text('Bildirimleri Etkinleştir'),
+                        SwitchListTile(
+                          title: const Text(
+                            'Bildirimleri Etkinleştir',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                     subtitle: const Text('Tehlikeli hava kalitesi bildirimleri alın'),
                     value: settings.notificationsEnabled,
+                          activeColor: AppStyles.primaryColor,
                     onChanged: (value) {
                       settingsProvider.toggleNotifications(value);
                     },
+                          secondary: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.notifications, color: Colors.red),
+                          ),
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('Bildirim Eşiği'),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.warning, color: Colors.orange),
+                          ),
+                          title: const Text(
+                            'Bildirim Eşiği',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                     subtitle: Text('AQI ${settings.notificationThreshold} üzerinde bildirim al'),
-                    trailing: DropdownButton<int>(
+                          trailing: SizedBox(
+                            width: 120,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppStyles.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: DropdownButton<int>(
                       value: settings.notificationThreshold,
+                                underline: const SizedBox(),
+                                icon: const Icon(Icons.arrow_drop_down, color: AppStyles.primaryColor),
+                                isExpanded: true,
                       onChanged: (value) {
                         if (value != null) {
                           settingsProvider.updateNotificationThreshold(value);
@@ -240,7 +411,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         DropdownMenuItem(
                           value: 100,
-                          child: Text('100 (Hassas Gruplar)'),
+                                    child: Text('100 (Hassas)'),
                         ),
                         DropdownMenuItem(
                           value: 150,
@@ -248,41 +419,32 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         DropdownMenuItem(
                           value: 200,
-                          child: Text('200 (Çok Sağlıksız)'),
+                                    child: Text('200 (Çok S.)'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
           
           const SizedBox(height: 16),
           
           // Konum ayarları
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                    _buildSettingsCard(
+                      title: 'Konum Ayarları',
+                      icon: Icons.location_searching,
+                      iconColor: const Color(0xFF5BBCD9),
                 children: [
-                  const Text(
-                    'Konum Ayarları',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    title: const Text('Arka Planda Konum Takibi'),
+                        SwitchListTile(
+                          title: const Text(
+                            'Arka Planda Konum Takibi',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                     subtitle: const Text('Uygulama kapalıyken konum güncellemelerini al'),
                     value: settings.backgroundLocationEnabled,
+                          activeColor: AppStyles.primaryColor,
                     onChanged: (value) {
                       settingsProvider.toggleBackgroundLocation(value);
                       
@@ -295,13 +457,43 @@ class SettingsScreen extends StatelessWidget {
                         locationProvider.stopLocationUpdates();
                       }
                     },
+                          secondary: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF5BBCD9).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.my_location, color: Color(0xFF5BBCD9)),
+                          ),
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('Konum Güncelleme Aralığı'),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF82E0F9).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.timer, color: Color(0xFF82E0F9)),
+                          ),
+                          title: const Text(
+                            'Konum Güncelleme Aralığı',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                     subtitle: Text('${settings.locationUpdateInterval} dakikada bir güncelle'),
-                    trailing: DropdownButton<int>(
+                          trailing: SizedBox(
+                            width: 120,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppStyles.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: DropdownButton<int>(
                       value: settings.locationUpdateInterval,
+                                underline: const SizedBox(),
+                                icon: const Icon(Icons.arrow_drop_down, color: AppStyles.primaryColor),
+                                isExpanded: true,
                       onChanged: (value) {
                         if (value != null) {
                           settingsProvider.updateLocationUpdateInterval(value);
@@ -332,12 +524,14 @@ class SettingsScreen extends StatelessWidget {
                           child: Text('2 saat'),
                         ),
                       ],
+                              ),
+                            ),
                     ),
                   ),
                   if (!locationProvider.hasPermission)
                     Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: ElevatedButton(
+                            child: ElevatedButton.icon(
                         onPressed: () async {
                           final hasPermission = await locationProvider.checkLocationPermission(context);
                           if (hasPermission && settings.backgroundLocationEnabled) {
@@ -350,40 +544,52 @@ class SettingsScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppStyles.primaryColor,
                           foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
                         ),
-                        child: const Text('Konum İzni Ver'),
+                              icon: const Icon(Icons.location_on),
+                              label: const Text('Konum İzni Ver'),
                       ),
                     ),
                 ],
-              ),
-            ),
           ),
           
           const SizedBox(height: 16),
           
           // Görünüm ayarları
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(
+                    _buildSettingsCard(
+                      title: 'Görünüm Ayarları',
+                      icon: Icons.palette,
+                      iconColor: const Color(0xFFF9CC3E),
+                      children: [
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9CC3E).withOpacity(0.2),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Görünüm Ayarları',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ListTile(
-                    title: const Text('Sıcaklık Birimi'),
-                    trailing: DropdownButton<String>(
+                            child: const Icon(Icons.thermostat, color: Color(0xFFF9CC3E)),
+                          ),
+                          title: const Text(
+                            'Sıcaklık Birimi',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          trailing: SizedBox(
+                            width: 120,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppStyles.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: DropdownButton<String>(
                       value: settings.temperatureUnit,
+                                underline: const SizedBox(),
+                                icon: const Icon(Icons.arrow_drop_down, color: AppStyles.primaryColor),
+                                isExpanded: true,
                       onChanged: (value) {
                         if (value != null) {
                           settingsProvider.updateTemperatureUnit(value);
@@ -399,13 +605,37 @@ class SettingsScreen extends StatelessWidget {
                           child: Text('Fahrenheit (°F)'),
                         ),
                       ],
+                              ),
+                            ),
                     ),
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('Dil'),
-                    trailing: DropdownButton<String>(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF82E0F9).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.language, color: Color(0xFF82E0F9)),
+                          ),
+                          title: const Text(
+                            'Dil',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          trailing: SizedBox(
+                            width: 120,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppStyles.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: DropdownButton<String>(
                       value: settings.language,
+                                underline: const SizedBox(),
+                                icon: const Icon(Icons.arrow_drop_down, color: AppStyles.primaryColor),
+                                isExpanded: true,
                       onChanged: (value) {
                         if (value != null) {
                           settingsProvider.updateLanguage(value);
@@ -423,67 +653,196 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                ],
               ),
             ),
+                      ],
           ),
           
           const SizedBox(height: 16),
           
           // Uygulama bilgileri
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(
+                    _buildSettingsCard(
+                      title: 'Uygulama Bilgileri',
+                      icon: Icons.info,
+                      iconColor: Colors.purple,
+                      children: [
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withOpacity(0.2),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Uygulama Bilgileri',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ListTile(
-                    title: const Text('Uygulama Versiyonu'),
+                            child: const Icon(Icons.new_releases, color: Colors.purple),
+                          ),
+                          title: const Text(
+                            'Uygulama Versiyonu',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                     subtitle: const Text('1.0.0'),
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('Veri Kaynakları'),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.cloud, color: Colors.blue),
+                          ),
+                          title: const Text(
+                            'Veri Kaynakları',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                     subtitle: const Text('WAQI'),
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('Gizlilik Politikası'),
-                    trailing: const Icon(Icons.arrow_forward_ios),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.teal.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.privacy_tip, color: Colors.teal),
+                          ),
+                          title: const Text(
+                            'Gizlilik Politikası',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
                       // Gizlilik politikası sayfasına yönlendirme
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
-                      );
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                            );
                     },
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('Kullanım Koşulları'),
-                    trailing: const Icon(Icons.arrow_forward_ios),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.description, color: Colors.amber),
+                          ),
+                          title: const Text(
+                            'Kullanım Koşulları',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
                       // Kullanım koşulları sayfasına yönlendirme
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
-                      );
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
+                            );
                     },
                   ),
                 ],
               ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Çıkış yap butonu
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                          
+                          // Konum güncellemelerini durdur
+                          Provider.of<LocationProvider>(context, listen: false).stopLocationUpdates();
+                          
+                          // Bildirim dinlemeyi durdur
+                          Provider.of<NotificationProvider>(context, listen: false).stopListeningNotifications();
+                          
+                          // Çıkış yap
+                          await authProvider.signOut();
+                          
+                          if (context.mounted) {
+                            // Giriş ekranına yönlendir
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        icon: const Icon(Icons.logout),
+                        label: const Text('Çıkış Yap'),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  // Ayarlar kartı widget'ı
+  Widget _buildSettingsCard({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Başlık
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
+          
+          // İçerik
+          ...children,
+          
+          const SizedBox(height: 8),
         ],
       ),
     );

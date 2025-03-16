@@ -35,7 +35,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSection(
               'Giriş',
-              'Bu gizlilik politikası, Hava Kalitesi uygulamasını kullanırken toplanan, işlenen ve saklanan kişisel verilerinizle ilgili bilgileri içerir. Uygulamayı kullanarak, bu politikada belirtilen uygulamaları kabul etmiş olursunuz.',
+              'Bu gizlilik politikası, Airy uygulamasını kullanırken toplanan, işlenen ve saklanan kişisel verilerinizle ilgili bilgileri içerir. Uygulamayı kullanarak, bu politikada belirtilen uygulamaları kabul etmiş olursunuz.',
             ),
             _buildSection(
               'Topladığımız Veriler',

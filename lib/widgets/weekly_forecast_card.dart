@@ -21,12 +21,12 @@ class WeeklyForecastCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.purple.shade300,
-            Colors.purple.shade700,
+            Color(0xFF82E0F9), // Açık mavi
+            Color(0xFF5BBCD9), // Açık mavinin koyu tonu
           ],
         ),
         boxShadow: AppStyles.cardShadow,
@@ -42,7 +42,7 @@ class WeeklyForecastCard extends StatelessWidget {
               right: 0,
               height: 60,
               child: WaveAnimation(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white,
                 height: 10,
                 speed: 0.5,
                 child: const SizedBox.expand(),
@@ -153,7 +153,7 @@ class WeeklyForecastCard extends StatelessWidget {
         
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
-          color: Colors.white.withOpacity(0.2),
+          color: const Color(0xFFFFFFFF),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -167,7 +167,7 @@ class WeeklyForecastCard extends StatelessWidget {
                   child: Text(
                     formattedDate,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF82E0F9),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -179,14 +179,14 @@ class WeeklyForecastCard extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.air,
-                        color: aqiColor,
+                        color: const Color(0xFFF9CC3E),
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'AQI: ${avgValue.toInt()}',
-                        style: TextStyle(
-                          color: aqiColor,
+                        style: const TextStyle(
+                          color: Color(0xFFF9CC3E),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -199,7 +199,7 @@ class WeeklyForecastCard extends StatelessWidget {
                   child: Text(
                     _getAQICategory(avgValue),
                     style: TextStyle(
-                      color: aqiColor,
+                      color: Colors.black87,
                       fontSize: 12,
                     ),
                     overflow: TextOverflow.ellipsis,

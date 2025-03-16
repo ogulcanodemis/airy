@@ -16,8 +16,32 @@ class AirQualityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _getCategoryColor(airQuality.category);
-    final gradient = AppStyles.airQualityGradient(airQuality.category);
+    // Hava kalitesi kategorisine göre renk belirle
+    final String category = airQuality.category;
+    
+    // Yeni renk şemasına göre gradient belirle
+    final LinearGradient cardGradient;
+    if (category == 'İyi' || category == 'Orta') {
+      // İyi ve orta kategoriler için sarı gradient
+      cardGradient = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFFF9CC3E), // Sarı
+          Color(0xFFE5B82A), // Sarının koyu tonu
+        ],
+      );
+    } else {
+      // Diğer kategoriler için mavi gradient
+      cardGradient = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF82E0F9), // Açık mavi
+          Color(0xFF5BBCD9), // Açık mavinin koyu tonu
+        ],
+      );
+    }
     
     return GestureDetector(
       onTap: onTap,
@@ -34,17 +58,21 @@ class AirQualityCard extends StatelessWidget {
               // Arka plan gradient
               Container(
                 decoration: BoxDecoration(
-                  gradient: gradient,
+                  gradient: cardGradient,
                 ),
               ),
               
-              // Parçacık animasyonu
-              ParticleAnimation(
-                color: Colors.white,
-                particleCount: 20,
-                child: Container(
-                  width: double.infinity,
-                  height: 300, // Sabit bir yükseklik belirle
+              // Dalga animasyonu
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 60,
+                child: WaveAnimation(
+                  color: Colors.white,
+                  height: 10,
+                  speed: 0.5,
+                  child: const SizedBox.expand(),
                 ),
               ),
               
@@ -80,20 +108,22 @@ class AirQualityCard extends StatelessWidget {
                                     'Güncelleme: ${_formatDateTime(airQuality.timestamp)}',
                                     style: const TextStyle(
                                       fontSize: 14,
-                                      color: Colors.white70,
+                                      color: Colors.white,
                                     ),
                                   ),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.15),
+                                      color: const Color(0xFFFFFFFF),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
                                       'Kaynak: ${airQuality.source}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.white,
+                                        color: category == 'İyi' || category == 'Orta'
+                                            ? const Color(0xFFF9CC3E) // Sarı
+                                            : const Color(0xFF82E0F9), // Açık mavi
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -106,13 +136,15 @@ class AirQualityCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: const Color(0xFFFFFFFF), // Beyaz
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             airQuality.category,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: category == 'İyi' || category == 'Orta'
+                                  ? const Color(0xFFF9CC3E) // Sarı
+                                  : const Color(0xFF82E0F9), // Açık mavi
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -166,22 +198,24 @@ class AirQualityCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: const Color(0xFFFFFFFF), // Beyaz
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             _getAdviceIcon(airQuality.category),
-                            color: Colors.white,
+                            color: category == 'İyi' || category == 'Orta'
+                                ? const Color(0xFFF9CC3E) // Sarı
+                                : const Color(0xFF82E0F9), // Açık mavi
                             size: 24,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               _getAdviceText(airQuality.category),
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Colors.black87,
                                 fontSize: 14,
                               ),
                             ),
@@ -204,7 +238,9 @@ class AirQualityCard extends StatelessWidget {
                             style: TextStyle(color: Colors.white),
                           ),
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.2),
+                            backgroundColor: category == 'İyi' || category == 'Orta'
+                                ? const Color(0xFF82E0F9) // Açık mavi
+                                : const Color(0xFFF9CC3E), // Sarı
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
@@ -231,13 +267,13 @@ class AirQualityCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: const Color(0xFFFFFFFF), // Beyaz
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               name,
               style: const TextStyle(
-                color: Colors.white,
+                color: Color(0xFF212121), // Koyu gri
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),

@@ -35,7 +35,7 @@ class TermsOfServiceScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSection(
               'Giriş',
-              'Bu kullanım koşulları, Hava Kalitesi uygulamasını kullanımınızı düzenleyen şartları ve koşulları belirler. Uygulamayı kullanarak, bu koşulları kabul etmiş olursunuz.',
+              'Bu kullanım koşulları, Airy uygulamasını kullanımınızı düzenleyen şartları ve koşulları belirler. Uygulamayı kullanarak, bu koşulları kabul etmiş olursunuz.',
             ),
             _buildSection(
               'Hesap Oluşturma ve Güvenlik',

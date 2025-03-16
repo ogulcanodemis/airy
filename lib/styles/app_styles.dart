@@ -6,7 +6,7 @@ class AppStyles {
   static const Color primaryDarkColor = Color(0xFF0D47A1);
   static const Color primaryLightColor = Color(0xFF64B5F6);
   static const Color accentColor = Color(0xFF03A9F4);
-  static const Color backgroundColor = Color(0xFFF5F5F5);
+  static const Color backgroundColor = Color(0xFFFFFFFF);
   
   // Metin renkleri
   static const Color textPrimaryColor = Color(0xFF212121);
@@ -41,7 +41,13 @@ class AppStyles {
   static LinearGradient primaryGradient = const LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryColor, primaryDarkColor],
+    colors: [Color(0xFF82E0F9), Color(0xFF5BBCD9)],
+  );
+  
+  static LinearGradient accentGradient = const LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFF9CC3E), Color(0xFFE5B82A)],
   );
   
   static LinearGradient airQualityGradient(String category) {

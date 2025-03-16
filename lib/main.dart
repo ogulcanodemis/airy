@@ -46,6 +46,11 @@ class MyApp extends StatelessWidget {
         title: 'Hava Kalitesi Uygulaması',
         theme: ThemeData(
           primarySwatch: Colors.blue,
+          scaffoldBackgroundColor: const Color(0xFFFFFFFF), // Beyaz arka plan
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF1976D2), // Mavi app bar
+            elevation: 0,
+          ),
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
           fontFamily: 'Roboto',

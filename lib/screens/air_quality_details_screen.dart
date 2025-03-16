@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../providers/air_quality_provider.dart';
 import '../models/air_quality_model.dart';
 import '../styles/app_styles.dart';
@@ -7,316 +8,151 @@ import '../widgets/animated_widgets.dart';
 import '../widgets/air_quality_gauge.dart';
 
 class AirQualityDetailsScreen extends StatefulWidget {
-  const AirQualityDetailsScreen({super.key});
+  final AirQualityModel? airQuality;
+
+  const AirQualityDetailsScreen({
+    Key? key,
+    this.airQuality,
+  }) : super(key: key);
 
   @override
   State<AirQualityDetailsScreen> createState() => _AirQualityDetailsScreenState();
 }
 
 class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
   late ScrollController _scrollController;
+  late AnimationController _animationController;
   bool _showAppBarTitle = false;
+  AirQualityModel? airQuality;
+  late AirQualityProvider airQualityProvider;
 
   @override
   void initState() {
     super.initState();
+    airQuality = widget.airQuality;
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..forward();
-    
-    _scrollController = ScrollController()
-      ..addListener(() {
-        setState(() {
-          _showAppBarTitle = _scrollController.offset > 120;
-        });
-      });
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    airQualityProvider = Provider.of<AirQualityProvider>(context);
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _animationController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.offset > 140 && !_showAppBarTitle) {
+      setState(() {
+        _showAppBarTitle = true;
+      });
+    } else if (_scrollController.offset <= 140 && _showAppBarTitle) {
+      setState(() {
+        _showAppBarTitle = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final airQualityProvider = Provider.of<AirQualityProvider>(context);
-    final airQuality = airQualityProvider.currentAirQuality;
-    
-    if (airQuality == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Hava Kalitesi Detayları'),
-          backgroundColor: AppStyles.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        body: Center(
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFFFFF), // Beyaz arka plan
+      body: AnimatedBackground(
+        color1: const Color(0xFF82E0F9), // Açık mavi
+        color2: const Color(0xFFF9CC3E), // Sarı
+        bubbleCount: 8,
+        child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.cloud_off, size: 80, color: Colors.grey),
-              const SizedBox(height: 16),
-              const Text(
-                'Hava kalitesi verisi bulunamadı',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              // Üst kısım - Başlık, geri butonu ve paylaş butonu
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Geri butonu
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppStyles.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: AppStyles.primaryColor,
+                          size: 26,
+                        ),
+                        tooltip: 'Geri',
+                        padding: const EdgeInsets.all(10.0),
+                        constraints: const BoxConstraints(
+                          minWidth: 46,
+                          minHeight: 46,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    
+                    // Başlık
+                    const Text(
+                      'Hava Kalitesi Detayları',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppStyles.primaryColor,
+                      ),
+                    ),
+                    
+                    // Paylaş butonu
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppStyles.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.share,
+                          color: AppStyles.primaryColor,
+                          size: 26,
+                        ),
+                        tooltip: 'Paylaş',
+                        padding: const EdgeInsets.all(10.0),
+                        constraints: const BoxConstraints(
+                          minWidth: 46,
+                          minHeight: 46,
+                        ),
+                        onPressed: () => _shareAirQualityData(context),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: AppStyles.primaryButtonStyle,
-                child: const Text('Geri Dön'),
+              
+              // Ana içerik
+              Expanded(
+                child: airQualityProvider.hasAirQualityData
+                    ? _buildContent(context, airQualityProvider.currentAirQuality!)
+                    : const Center(
+                        child: Text(
+                          'Hava kalitesi verisi bulunamadı',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
               ),
             ],
           ),
         ),
-      );
-    }
-    
-    final color = airQualityProvider.getAirQualityColor(airQuality.category);
-    final gradient = AppStyles.airQualityGradient(airQuality.category);
-    
-    return Scaffold(
-      body: CustomScrollView(
-        controller: _scrollController,
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Özel App Bar
-          SliverAppBar(
-            expandedHeight: 200,
-            floating: false,
-            pinned: true,
-            stretch: true,
-            backgroundColor: color,
-            elevation: 0,
-            title: AnimatedOpacity(
-              opacity: _showAppBarTitle ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: Text(
-                airQuality.location,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Gradient arka plan
-                  Container(
-                    decoration: BoxDecoration(gradient: gradient),
-                  ),
-                  
-                  // Parçacık animasyonu
-                  ParticleAnimation(
-                    color: Colors.white,
-                    particleCount: 30,
-                    child: Container(),
-                  ),
-                  
-                  // Konum ve zaman bilgisi
-                  SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on, color: Colors.white),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  airQuality.location,
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Güncelleme: ${_formatDateTime(airQuality.timestamp)}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          Text(
-                            'Veri Kaynağı: ${airQuality.source}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
-          // İçerik
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // AQI ve kategori
-                  _buildSection(
-                    title: 'Hava Kalitesi İndeksi (AQI)',
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 16),
-                        Center(
-                          child: BreathingAnimation(
-                            minScale: 0.95,
-                            maxScale: 1.05,
-                            duration: const Duration(seconds: 4),
-                            child: AirQualityGauge(
-                              aqi: airQuality.aqi,
-                              category: airQuality.category,
-                              size: 220,
-                              animate: true,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            gradient: gradient,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: color.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            airQuality.category,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          airQualityProvider.getAirQualityAdvice(airQuality.category),
-                          style: const TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Konum detayları
-                  _buildSection(
-                    title: 'Konum Detayları',
-                    icon: Icons.map,
-                    iconColor: Colors.blue,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Column(
-                        children: [
-                          _buildInfoRow(
-                            icon: Icons.location_searching,
-                            title: 'Enlem',
-                            value: airQuality.latitude.toStringAsFixed(6),
-                          ),
-                          const Divider(),
-                          _buildInfoRow(
-                            icon: Icons.location_searching,
-                            title: 'Boylam',
-                            value: airQuality.longitude.toStringAsFixed(6),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Kirleticiler
-                  _buildSection(
-                    title: 'Kirleticiler',
-                    icon: Icons.opacity,
-                    iconColor: Colors.teal,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: _buildPollutantsTable(airQuality),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Sağlık etkileri
-                  _buildSection(
-                    title: 'Sağlık Etkileri',
-                    icon: Icons.favorite,
-                    iconColor: Colors.red,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: _buildHealthEffects(airQuality.category),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Önlemler
-                  _buildSection(
-                    title: 'Alınabilecek Önlemler',
-                    icon: Icons.shield,
-                    iconColor: Colors.green,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: _buildPrecautions(airQuality.category),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Paylaş butonu
-                  Center(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Paylaşma fonksiyonu
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Hava kalitesi bilgisi paylaşılıyor...'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
-                      style: AppStyles.primaryButtonStyle,
-                      icon: const Icon(Icons.share),
-                      label: const Text('Bu Bilgiyi Paylaş'),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -327,37 +163,46 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
     IconData? icon,
     Color? iconColor,
     required Widget child,
+    Color? backgroundColor,
+    Color? textColor,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppStyles.cardShadow,
+        color: backgroundColor ?? Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Başlık
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
                 if (icon != null)
-                  Icon(icon, color: iconColor ?? Colors.grey, size: 24),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: (iconColor ?? Colors.grey).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: iconColor ?? Colors.grey, size: 24),
+                  ),
                 if (icon != null)
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: textColor,
                   ),
                 ),
               ],
@@ -369,6 +214,8 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: child,
           ),
+          
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -376,29 +223,60 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
   
   // Bilgi satırı
   Widget _buildInfoRow({
-    required IconData icon,
-    required String title,
+    required String label,
     required String value,
+    IconData? icon,
+    Color? iconColor,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            '$title:',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+          if (icon != null)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: (iconColor ?? Colors.blue).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: iconColor ?? Colors.blue, size: 20),
             ),
-          ),
-          const SizedBox(width: 8),
+          if (icon != null)
+            const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.right,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -426,8 +304,8 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
         Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFFF9F9F9),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: const [
@@ -468,8 +346,8 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: const Color(0xFFEEEEEE)),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
@@ -568,21 +446,35 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
     
     return Column(
       children: [
-        Row(
-          children: [
-            Icon(icon, color: color, size: 40),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                category,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: color,
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 30),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  category,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         Text(
@@ -593,32 +485,33 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
     );
   }
 
-  // Önlemler
-  Widget _buildPrecautions(String category) {
-    List<String> precautions;
+  // Öneriler
+  Widget _buildRecommendations(String category) {
+    List<String> recommendations;
+    Color color = _getCategoryColor(category);
     
     switch (category) {
       case 'İyi':
-        precautions = [
+        recommendations = [
           'Normal aktivitelerinize devam edebilirsiniz.',
           'Açık havada egzersiz yapmak için ideal bir gün.',
         ];
         break;
       case 'Orta':
-        precautions = [
+        recommendations = [
           'Hassas kişiler uzun süreli veya ağır dış mekan aktivitelerini azaltmayı düşünebilir.',
           'Pencerelerinizi açık tutabilirsiniz.',
         ];
         break;
       case 'Hassas Gruplar İçin Sağlıksız':
-        precautions = [
+        recommendations = [
           'Hassas gruplar (astım hastaları, yaşlılar, çocuklar) uzun süreli dış mekan aktivitelerini sınırlamalıdır.',
           'Herkes ağır dış mekan aktivitelerini azaltmalıdır.',
           'Mümkünse iç mekanlarda kalın ve pencerelerinizi kapalı tutun.',
         ];
         break;
       case 'Sağlıksız':
-        precautions = [
+        recommendations = [
           'Herkes dış mekan aktivitelerini sınırlamalıdır.',
           'Hassas gruplar tüm dış mekan aktivitelerinden kaçınmalıdır.',
           'İç mekanlarda kalın ve pencerelerinizi kapalı tutun.',
@@ -627,7 +520,7 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
         ];
         break;
       case 'Çok Sağlıksız':
-        precautions = [
+        recommendations = [
           'Herkes tüm dış mekan aktivitelerini sınırlamalıdır.',
           'Mümkün olduğunca iç mekanlarda kalın.',
           'Pencerelerinizi ve kapılarınızı sıkıca kapalı tutun.',
@@ -637,7 +530,7 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
         ];
         break;
       case 'Tehlikeli':
-        precautions = [
+        recommendations = [
           'Herkes dış mekan aktivitelerinden kaçınmalıdır.',
           'İç mekanlarda kalın ve fiziksel aktiviteyi azaltın.',
           'Tüm pencereler, kapılar ve hava girişlerini kapatın.',
@@ -647,33 +540,33 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
         ];
         break;
       default:
-        precautions = ['Bilinmeyen hava kalitesi kategorisi için önlem bilgisi yok.'];
+        recommendations = ['Bilinmeyen hava kalitesi kategorisi için önlem bilgisi yok.'];
     }
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: precautions.map((precaution) {
+      children: recommendations.map((recommendation) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: _getCategoryColor(category).withOpacity(0.1),
+                  color: color.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.check,
-                  color: _getCategoryColor(category),
+                  color: color,
                   size: 16,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  precaution,
+                  recommendation,
                   style: const TextStyle(fontSize: 16, height: 1.4),
                 ),
               ),
@@ -784,5 +677,218 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
     final minute = dateTime.minute.toString().padLeft(2, '0');
     
     return '$day/$month/$year $hour:$minute';
+  }
+
+  Widget _buildContent(BuildContext context, AirQualityModel airQuality) {
+    final color = airQualityProvider.getAirQualityColor(airQuality.category);
+    final gradient = AppStyles.airQualityGradient(airQuality.category);
+    
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Hava kalitesi göstergesi
+          Center(
+            child: Column(
+              children: [
+                AirQualityGauge(
+                  aqi: airQuality.aqi,
+                  category: airQuality.category,
+                  size: 220,
+                  animate: true,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  airQuality.location,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppStyles.textPrimaryColor,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  'Son Güncelleme: ${_formatDateTime(airQuality.timestamp)}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppStyles.textSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    airQuality.category,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 4.0,
+                          color: Colors.black45,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  airQualityProvider.getAirQualityAdvice(airQuality.category),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: AppStyles.textPrimaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Kirleticiler bölümü
+          _buildSection(
+            title: 'Kirleticiler',
+            icon: Icons.science,
+            iconColor: const Color(0xFF82E0F9),
+            child: _buildPollutantsTable(airQuality),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Sağlık etkileri bölümü
+          _buildSection(
+            title: 'Sağlık Etkileri',
+            icon: Icons.health_and_safety,
+            iconColor: const Color(0xFFF9CC3E),
+            child: _buildHealthEffects(airQuality.category),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Öneriler bölümü
+          _buildSection(
+            title: 'Öneriler',
+            icon: Icons.tips_and_updates,
+            iconColor: Colors.green,
+            child: _buildRecommendations(airQuality.category),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Kaynak bilgisi
+          _buildSection(
+            title: 'Veri Kaynağı',
+            icon: Icons.info,
+            iconColor: Colors.purple,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoRow(
+                  label: 'Kaynak',
+                  value: airQuality.source,
+                  icon: Icons.cloud,
+                  iconColor: const Color(0xFF82E0F9),
+                ),
+                _buildInfoRow(
+                  label: 'Ölçüm Zamanı',
+                  value: _formatDateTime(airQuality.timestamp),
+                  icon: Icons.access_time,
+                  iconColor: Colors.green,
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  void _shareAirQualityData(BuildContext context) {
+    // Mevcut hava kalitesi verisini al
+    final airQuality = airQualityProvider.currentAirQuality;
+    
+    if (airQuality == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Paylaşılacak hava kalitesi verisi bulunamadı'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    
+    // Paylaşılacak metni oluştur
+    final shareText = '''
+📊 Hava Kalitesi Bilgisi 📊
+
+📍 Konum: ${airQuality.location}
+🔢 AQI: ${airQuality.aqi.toStringAsFixed(0)}
+📋 Kategori: ${airQuality.category}
+⏱️ Son Güncelleme: ${_formatDateTime(airQuality.timestamp)}
+
+${airQualityProvider.getAirQualityAdvice(airQuality.category)}
+
+${_getPollutantsText(airQuality)}
+
+Airy uygulaması ile paylaşıldı.
+''';
+    
+    // Paylaşma işlemini başlat
+    Share.share(
+      shareText,
+      subject: '${airQuality.location} Hava Kalitesi Bilgisi',
+    ).then((_) {
+      // Paylaşma işlemi tamamlandığında
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Hava kalitesi bilgisi paylaşıldı'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }).catchError((error) {
+      // Hata durumunda
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Paylaşma işlemi başarısız: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    });
+  }
+  
+  // Kirleticileri metin formatında döndürür
+  String _getPollutantsText(AirQualityModel airQuality) {
+    if (airQuality.pollutants.isEmpty) {
+      return '';
+    }
+    
+    final buffer = StringBuffer('🧪 Kirleticiler:\n');
+    
+    airQuality.pollutants.forEach((key, value) {
+      buffer.write('${_getPollutantName(key)}: ${value.toStringAsFixed(1)} µg/m³\n');
+    });
+    
+    return buffer.toString();
   }
 } 

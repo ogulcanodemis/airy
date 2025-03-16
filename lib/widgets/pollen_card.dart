@@ -130,7 +130,7 @@ class PollenCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontStyle: FontStyle.italic,
-                      color: Colors.white70,
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -204,7 +204,7 @@ class PollenCard extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: index < filledDots ? color : Colors.white.withOpacity(0.3),
+            color: index < filledDots ? color : Colors.white,
           ),
         );
       }),

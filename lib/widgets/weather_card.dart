@@ -18,12 +18,12 @@ class WeatherCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.blue.shade300,
-            Colors.blue.shade700,
+            Color(0xFFF9CC3E), // Sarı
+            Color(0xFFE5B82A), // Sarının koyu tonu
           ],
         ),
         boxShadow: AppStyles.cardShadow,
@@ -39,7 +39,7 @@ class WeatherCard extends StatelessWidget {
               right: 0,
               height: 60,
               child: WaveAnimation(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white,
                 height: 10,
                 speed: 0.5,
                 child: const SizedBox.expand(),
@@ -167,7 +167,7 @@ class WeatherCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -177,14 +177,14 @@ class WeatherCard extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: Colors.white70,
+                color: const Color(0xFFF9CC3E),
                 size: 16,
               ),
               const SizedBox(width: 6),
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white70,
+                  color: Color(0xFF82E0F9),
                   fontSize: 14,
                 ),
               ),
@@ -194,7 +194,7 @@ class WeatherCard extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
+              color: Colors.black87,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),

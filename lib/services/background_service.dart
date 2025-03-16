@@ -46,7 +46,7 @@ class BackgroundService {
     print('Arka plan servisi başlatılıyor (Timer tabanlı)...');
     
     // Test bildirimi için zamanlayıcı başlat
-    _startTestNotificationTimer();
+    // _startTestNotificationTimer(); // Test bildirimleri devre dışı bırakıldı
     
     // Kullanıcı oturum açmış mı kontrol et
     final user = FirebaseAuth.instance.currentUser;
@@ -221,14 +221,17 @@ class BackgroundService {
   }
 
   // Test bildirimi için zamanlayıcı
+  /* 
   void _startTestNotificationTimer() {
     print('Test bildirimi zamanlayıcısı başlatılıyor (1 dakika sonra)...');
     Timer(const Duration(minutes: 1), () {
       _sendTestNotification();
     });
   }
+  */
   
   // Test bildirimi gönderme
+  /*
   Future<void> _sendTestNotification() async {
     print('Test bildirimi gönderiliyor...');
     try {
@@ -262,6 +265,7 @@ class BackgroundService {
       print('Test bildirimi gönderilirken hata oluştu: $e');
     }
   }
+  */
 }
 
 // Hava kalitesi kontrolü yapma

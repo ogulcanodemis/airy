@@ -161,263 +161,338 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final settingsProvider = Provider.of<SettingsProvider>(context);
     
     return Scaffold(
-      backgroundColor: AppStyles.backgroundColor,
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/images/logo.png',
-              width: 40,
-              height: 40,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.air,
-                  size: 40,
-                  color: Colors.white,
-                );
-              },
-            ),
-            const SizedBox(width: 8),
-            const Text('Hava Kalitesi'),
-          ],
-        ),
-        backgroundColor: AppStyles.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          // Bildirim butonu
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-                  );
-                },
-              ),
-              if (notificationProvider.unreadCount > 0)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: PulseAnimation(
-                    minOpacity: 0.7,
-                    maxOpacity: 1.0,
-                    duration: const Duration(milliseconds: 800),
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '${notificationProvider.unreadCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFFFFFFF), // Beyaz arka plan
       body: RefreshIndicator(
         onRefresh: _refreshData,
         color: AppStyles.primaryColor,
         backgroundColor: Colors.white,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+        child: AnimatedBackground(
+          color1: const Color(0xFF82E0F9), // Açık mavi
+          color2: const Color(0xFFF9CC3E), // Sarı
+          bubbleCount: 12,
+          child: SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Kullanıcı profil kartı
-                if (authProvider.userModel != null)
-                  UserProfileCard(
-                    user: authProvider.userModel!,
-                    onLogout: _logout,
-                    onSettings: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                      );
-                    },
-                  ),
-                
-                const SizedBox(height: 16),
-                
-                // Konum kartı
-                LocationCard(
-                  address: locationProvider.userLocation?.address,
-                  position: locationProvider.currentPosition,
-                  isLoading: locationProvider.isLoading,
-                  hasPermission: locationProvider.hasPermission,
-                  onRequestPermission: () async {
-                    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                    final hasPermission = await locationProvider.checkLocationPermission(context);
-                    
-                    if (hasPermission && mounted && authProvider.firebaseUser != null) {
-                      await locationProvider.getCurrentLocation(context, userId: authProvider.firebaseUser!.uid);
-                      
-                      if (locationProvider.currentPosition != null) {
-                        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-                        
-                        await Provider.of<AirQualityProvider>(context, listen: false).getAirQualityByLocation(
-                          locationProvider.currentPosition!.latitude,
-                          locationProvider.currentPosition!.longitude,
-                          authProvider.firebaseUser!.uid,
-                          context: context,
-                          settings: settingsProvider.settings!,
-                          isAdmin: authProvider.userModel?.isAdmin ?? false,
-                        );
-                      }
-                    }
-                  },
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Hava kalitesi kartı
-                if (airQualityProvider.hasAirQualityData)
-                  AirQualityCard(
-                    airQuality: airQualityProvider.currentAirQuality!,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const AirQualityDetailsScreen(),
-                        ),
-                      );
-                    },
-                  )
-                else if (airQualityProvider.isLoading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: AppStyles.cardShadow,
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.cloud_off,
-                          size: 50,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Hava kalitesi verisi bulunamadı',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          airQualityProvider.error.isEmpty
-                              ? 'Lütfen internet bağlantınızı kontrol edin ve yenileyin'
-                              : airQualityProvider.error,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        ElevatedButton(
-                          onPressed: _refreshData,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppStyles.primaryColor,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Yenile'),
-                        ),
-                      ],
-                    ),
-                  ),
-                
-                const SizedBox(height: 16),
-                
-                // Hava durumu kartı - WAQI API'den gelen hava durumu verileri varsa göster
-                if (airQualityProvider.hasAirQualityData && 
-                    airQualityProvider.currentAirQuality!.additionalData != null &&
-                    airQualityProvider.currentAirQuality!.additionalData!['hasWeatherData'] == true)
-                  WeatherCard(
-                    weatherData: airQualityProvider.currentAirQuality!.additionalData!['weatherData'],
-                    temperatureUnit: settingsProvider.settings?.temperatureUnit ?? 'celsius',
-                  ),
-                
-                const SizedBox(height: 16),
-                
-                // Haftalık tahmin kartı - WAQI API'den gelen tahmin verileri varsa göster
-                if (airQualityProvider.hasAirQualityData && 
-                    airQualityProvider.currentAirQuality!.additionalData != null &&
-                    airQualityProvider.currentAirQuality!.additionalData!['weatherData'] != null &&
-                    airQualityProvider.currentAirQuality!.additionalData!['weatherData']['hasWeeklyForecast'] == true)
-                  WeeklyForecastCard(
-                    forecastData: airQualityProvider.currentAirQuality!.additionalData!['weatherData']['forecast'],
-                    temperatureUnit: settingsProvider.settings?.temperatureUnit ?? 'celsius',
-                    location: airQualityProvider.currentAirQuality!.location,
-                  ),
-                
-                const SizedBox(height: 16),
-                
-                // Tavsiyeler kartı
-                if (airQualityProvider.hasAirQualityData)
-                  AdviceCard(
-                    category: airQualityProvider.currentAirQuality!.category,
-                    advice: airQualityProvider.getAirQualityAdvice(
-                      airQualityProvider.currentAirQuality!.category,
-                    ),
-                  ),
-                
-                // Polen kartı (sadece Google API için)
-                if (airQualityProvider.hasAirQualityData && 
-                    airQualityProvider.currentAirQuality!.source == AirQualityService.SOURCE_GOOGLE &&
-                    airQualityProvider.currentAirQuality!.additionalData != null &&
-                    airQualityProvider.currentAirQuality!.additionalData!['hasPollenData'] == true)
-                  Column(
+                // Üst kısım - Başlık ve butonlar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const SizedBox(height: 16),
-                      PollenCard(
-                        pollenData: airQualityProvider.currentAirQuality!.additionalData!['pollenData'],
+                      // Logo ve başlık
+                      Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/logo.png',
+                            width: 40,
+                            height: 40,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.air,
+                                size: 40,
+                                color: AppStyles.primaryColor,
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Hava Kalitesi',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppStyles.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      // Sağ taraftaki butonlar
+                      Row(
+                        children: [
+                          // Bildirim butonu
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  color: AppStyles.primaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.notifications,
+                                    color: AppStyles.primaryColor,
+                                    size: 26,
+                                  ),
+                                  tooltip: 'Bildirimler',
+                                  padding: const EdgeInsets.all(10.0),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 46,
+                                    minHeight: 46,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                                    );
+                                  },
+                                ),
+                              ),
+                              if (notificationProvider.unreadCount > 0)
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: PulseAnimation(
+                                    minOpacity: 0.7,
+                                    maxOpacity: 1.0,
+                                    duration: const Duration(milliseconds: 800),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      constraints: const BoxConstraints(
+                                        minWidth: 18,
+                                        minHeight: 18,
+                                      ),
+                                      child: Text(
+                                        '${notificationProvider.unreadCount}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          
+                          // Ayarlar butonu
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppStyles.primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.settings,
+                                color: AppStyles.primaryColor,
+                                size: 26,
+                              ),
+                              tooltip: 'Ayarlar',
+                              padding: const EdgeInsets.all(10.0),
+                              constraints: const BoxConstraints(
+                                minWidth: 46,
+                                minHeight: 46,
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                ),
                 
-                // Yenileme göstergesi
-                if (_isRefreshing)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Center(
-                      child: RotationTransition(
-                        turns: _animationController,
-                        child: const Icon(
-                          Icons.refresh,
-                          color: AppStyles.primaryColor,
-                          size: 40,
-                        ),
+                // Ana içerik
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Kullanıcı profil kartı
+                          if (authProvider.userModel != null)
+                            UserProfileCard(
+                              user: authProvider.userModel!,
+                              onLogout: _logout,
+                              onSettings: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                                );
+                              },
+                            ),
+                        
+                          const SizedBox(height: 16),
+                          
+                          // Konum kartı
+                          LocationCard(
+                            address: locationProvider.userLocation?.address,
+                            position: locationProvider.currentPosition,
+                            isLoading: locationProvider.isLoading,
+                            hasPermission: locationProvider.hasPermission,
+                            onRequestPermission: () async {
+                              final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+                              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                              final hasPermission = await locationProvider.checkLocationPermission(context);
+                              
+                              if (hasPermission && mounted && authProvider.firebaseUser != null) {
+                                await locationProvider.getCurrentLocation(context, userId: authProvider.firebaseUser!.uid);
+                                
+                                if (locationProvider.currentPosition != null) {
+                                  final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+                                  
+                                  await Provider.of<AirQualityProvider>(context, listen: false).getAirQualityByLocation(
+                                    locationProvider.currentPosition!.latitude,
+                                    locationProvider.currentPosition!.longitude,
+                                    authProvider.firebaseUser!.uid,
+                                    context: context,
+                                    settings: settingsProvider.settings!,
+                                    isAdmin: authProvider.userModel?.isAdmin ?? false,
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Hava kalitesi kartı
+                          if (airQualityProvider.hasAirQualityData)
+                            AirQualityCard(
+                              airQuality: airQualityProvider.currentAirQuality!,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const AirQualityDetailsScreen(),
+                                  ),
+                                );
+                              },
+                            )
+                          else if (airQualityProvider.isLoading)
+                            const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          else
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFFFFF), // Beyaz arka plan
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: AppStyles.cardShadow,
+                              ),
+                              child: Column(
+                                children: [
+                                  const Icon(
+                                    Icons.cloud_off,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  const Text(
+                                    'Hava kalitesi verisi bulunamadı',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    airQualityProvider.error.isEmpty
+                                        ? 'Lütfen internet bağlantınızı kontrol edin ve yenileyin'
+                                        : airQualityProvider.error,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 15),
+                                  ElevatedButton(
+                                    onPressed: _refreshData,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppStyles.primaryColor,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Yenile'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Hava durumu kartı - WAQI API'den gelen hava durumu verileri varsa göster
+                          if (airQualityProvider.hasAirQualityData && 
+                              airQualityProvider.currentAirQuality!.additionalData != null &&
+                              airQualityProvider.currentAirQuality!.additionalData!['hasWeatherData'] == true)
+                            WeatherCard(
+                              weatherData: airQualityProvider.currentAirQuality!.additionalData!['weatherData'],
+                              temperatureUnit: settingsProvider.settings?.temperatureUnit ?? 'celsius',
+                            ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Haftalık tahmin kartı - WAQI API'den gelen tahmin verileri varsa göster
+                          if (airQualityProvider.hasAirQualityData && 
+                              airQualityProvider.currentAirQuality!.additionalData != null &&
+                              airQualityProvider.currentAirQuality!.additionalData!['weatherData'] != null &&
+                              airQualityProvider.currentAirQuality!.additionalData!['weatherData']['hasWeeklyForecast'] == true)
+                            WeeklyForecastCard(
+                              forecastData: airQualityProvider.currentAirQuality!.additionalData!['weatherData']['forecast'],
+                              temperatureUnit: settingsProvider.settings?.temperatureUnit ?? 'celsius',
+                              location: airQualityProvider.currentAirQuality!.location,
+                            ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Tavsiyeler kartı
+                          if (airQualityProvider.hasAirQualityData)
+                            AdviceCard(
+                              category: airQualityProvider.currentAirQuality!.category,
+                              advice: airQualityProvider.getAirQualityAdvice(
+                                airQualityProvider.currentAirQuality!.category,
+                              ),
+                            ),
+                          
+                          // Polen kartı (sadece Google API için)
+                          if (airQualityProvider.hasAirQualityData && 
+                              airQualityProvider.currentAirQuality!.source == AirQualityService.SOURCE_GOOGLE &&
+                              airQualityProvider.currentAirQuality!.additionalData != null &&
+                              airQualityProvider.currentAirQuality!.additionalData!['hasPollenData'] == true)
+                            Column(
+                              children: [
+                                const SizedBox(height: 16),
+                                PollenCard(
+                                  pollenData: airQualityProvider.currentAirQuality!.additionalData!['pollenData'],
+                                ),
+                              ],
+                            ),
+                          
+                          // Yenileme göstergesi
+                          if (_isRefreshing)
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Center(
+                                child: RotationTransition(
+                                  turns: _animationController,
+                                  child: const Icon(
+                                    Icons.refresh,
+                                    color: AppStyles.primaryColor,
+                                    size: 40,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
+                ),
               ],
             ),
           ),
