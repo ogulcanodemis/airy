@@ -65,37 +65,84 @@ class WeatherCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
-                        'Hava Durumu',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      Expanded(
+                        flex: 2,
+                        child: const Text(
+                          'Hava Durumu',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Spacer(),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          const Text(
-                            'Güncellendi',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white70,
+                      Flexible(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text(
+                              'Güncellendi',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.white70,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          Text(
-                            _formatMeasurementTime(weatherData['measurementTime']),
-                            style: const TextStyle(
-                              fontSize: 12,
+                            Text(
+                              _getCurrentTime(),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (weatherData.containsKey('timeNote'))
+                              Text(
+                                weatherData['timeNote'],
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white70,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  // Hava durumu açıklaması ve ikonu (Open-Meteo API'den gelirse)
+                  if (weatherData.containsKey('description') && weatherData.containsKey('icon'))
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (weatherData.containsKey('icon'))
+                            Icon(
+                              _getWeatherIcon(weatherData['icon']),
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                              size: 40,
+                            ),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Text(
+                              weatherData['description'] ?? 'Hava durumu',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
                   
                   const SizedBox(height: 20),
                   
@@ -154,6 +201,22 @@ class WeatherCard extends StatelessWidget {
                         ),
                     ],
                   ),
+                  
+                  // Veri kaynağı bilgisi
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Kaynak: ${weatherData.containsKey('source') ? weatherData['source'] : 'WAQI'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -181,11 +244,14 @@ class WeatherCard extends StatelessWidget {
                 size: 16,
               ),
               const SizedBox(width: 6),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Color(0xFF82E0F9),
-                  fontSize: 14,
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF82E0F9),
+                    fontSize: 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -198,6 +264,7 @@ class WeatherCard extends StatelessWidget {
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -226,6 +293,38 @@ class WeatherCard extends StatelessWidget {
     } catch (e) {
       // Eğer parse edilemezse, direkt olarak string'i döndür
       return timeString;
+    }
+  }
+
+  // Şimdiki zamanı formatlama
+  String _getCurrentTime() {
+    final now = DateTime.now();
+    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+  }
+
+  // Hava durumu ikonunu belirleme
+  IconData _getWeatherIcon(String iconCode) {
+    // Open-Meteo ikonları farklı olduğu için, basit bir eşleme yapıyoruz
+    if (iconCode.contains('clear')) {
+      return Icons.wb_sunny;
+    } else if (iconCode.contains('few')) {
+      return Icons.wb_cloudy;
+    } else if (iconCode.contains('scattered')) {
+      return Icons.cloud;
+    } else if (iconCode.contains('broken')) {
+      return Icons.cloud_queue;
+    } else if (iconCode.contains('shower')) {
+      return Icons.grain;
+    } else if (iconCode.contains('rain')) {
+      return Icons.beach_access;
+    } else if (iconCode.contains('thunder')) {
+      return Icons.flash_on;
+    } else if (iconCode.contains('snow')) {
+      return Icons.ac_unit;
+    } else if (iconCode.contains('mist')) {
+      return Icons.blur_on;
+    } else {
+      return Icons.help_outline;
     }
   }
 } 

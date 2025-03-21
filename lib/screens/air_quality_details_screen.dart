@@ -830,6 +830,13 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
                   icon: Icons.cloud,
                   iconColor: const Color(0xFF82E0F9),
                 ),
+                if (airQuality.stationDistance > 0)
+                  _buildInfoRow(
+                    label: 'İstasyon',
+                    value: '${airQuality.stationName} (${airQuality.stationDistance.toStringAsFixed(1)} km uzaklıkta)',
+                    icon: Icons.location_on,
+                    iconColor: Colors.red,
+                  ),
                 _buildInfoRow(
                   label: 'Ölçüm Zamanı',
                   value: _formatDateTime(airQuality.timestamp),
@@ -868,7 +875,7 @@ class _AirQualityDetailsScreenState extends State<AirQualityDetailsScreen> with 
 🔢 AQI: ${airQuality.aqi.toStringAsFixed(0)}
 📋 Kategori: ${airQuality.category}
 ⏱️ Son Güncelleme: ${_formatDateTime(airQuality.timestamp)}
-
+${airQuality.stationDistance > 0 ? '📡 İstasyon: ${airQuality.stationName} (${airQuality.stationDistance.toStringAsFixed(1)} km uzaklıkta)\n' : ''}
 ${airQualityProvider.getAirQualityAdvice(airQuality.category)}
 
 ${_getPollutantsText(airQuality)}

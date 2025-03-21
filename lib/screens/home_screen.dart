@@ -16,6 +16,7 @@ import '../widgets/pollen_card.dart';
 import '../widgets/weather_card.dart';
 import '../widgets/animated_widgets.dart';
 import '../widgets/weekly_forecast_card.dart';
+import '../widgets/air_quality_forecast_card.dart';
 import 'auth/login_screen.dart';
 import 'settings_screen.dart';
 import 'notifications_screen.dart';
@@ -447,6 +448,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             WeeklyForecastCard(
                               forecastData: airQualityProvider.currentAirQuality!.additionalData!['weatherData']['forecast'],
                               temperatureUnit: settingsProvider.settings?.temperatureUnit ?? 'celsius',
+                              location: airQualityProvider.currentAirQuality!.location,
+                            ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Haftalık hava kirliliği tahmin kartı - WAQI'den gelen tahmin verileri varsa göster
+                          if (airQualityProvider.hasAirQualityData &&
+                              airQualityProvider.currentAirQuality!.forecast.isNotEmpty &&
+                              (airQualityProvider.currentAirQuality!.forecast.containsKey('pm25') ||
+                               airQualityProvider.currentAirQuality!.forecast.containsKey('pm10') ||
+                               airQualityProvider.currentAirQuality!.forecast.containsKey('o3')))
+                            AirQualityForecastCard(
+                              forecastData: airQualityProvider.currentAirQuality!.forecast,
                               location: airQualityProvider.currentAirQuality!.location,
                             ),
                           

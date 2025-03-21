@@ -9,6 +9,12 @@ class AirQualityModel {
   final String category; // İyi, Orta, Kötü, Çok Kötü, Tehlikeli
   final String source; // Veri kaynağı (OpenAQ, WAQI, Google)
   final Map<String, dynamic>? additionalData; // Ek veriler (sağlık tavsiyeleri vb.)
+  final String color; // AQI rengi (hex)
+  final Map<String, dynamic> weather; // Hava durumu (sıcaklık, nem, rüzgar hızı, basınç)
+  final Map<String, List<Map<String, dynamic>>> forecast; // Tahmin verileri
+  final String measurementTime; // Ölçüm zamanı
+  final double stationDistance; // İstasyonun kullanıcıya uzaklığı (km)
+  final String stationName; // İstasyon adı
 
   AirQualityModel({
     required this.id,
@@ -21,6 +27,12 @@ class AirQualityModel {
     required this.category,
     required this.source,
     this.additionalData,
+    required this.color,
+    required this.weather,
+    required this.forecast,
+    required this.measurementTime,
+    this.stationDistance = 0.0,
+    this.stationName = '',
   });
 
   // Firestore'dan veri almak için factory constructor
@@ -36,6 +48,18 @@ class AirQualityModel {
       category: data['category'] ?? 'Bilinmiyor',
       source: data['source'] ?? 'OpenAQ',
       additionalData: data['additionalData'],
+      color: data['color'] ?? '',
+      weather: Map<String, dynamic>.from(data['weather'] ?? {}),
+      forecast: (data['forecast'] as Map<String, dynamic>?)?.map(
+            (key, value) => MapEntry(
+              key,
+              (value as List<dynamic>).map((item) => Map<String, dynamic>.from(item)).toList(),
+            ),
+          ) ??
+          {},
+      measurementTime: data['measurementTime'] ?? '',
+      stationDistance: data['stationDistance']?.toDouble() ?? 0.0,
+      stationName: data['stationName'] ?? '',
     );
   }
 
@@ -142,6 +166,12 @@ class AirQualityModel {
       category: category,
       source: 'OpenAQ',
       additionalData: null,
+      color: '',
+      weather: {},
+      forecast: {},
+      measurementTime: '',
+      stationDistance: 0.0,
+      stationName: '',
     );
   }
 
@@ -157,6 +187,12 @@ class AirQualityModel {
       'category': category,
       'source': source,
       'additionalData': additionalData,
+      'color': color,
+      'weather': weather,
+      'forecast': forecast,
+      'measurementTime': measurementTime,
+      'stationDistance': stationDistance,
+      'stationName': stationName,
     };
   }
   
@@ -248,6 +284,12 @@ class AirQualityModel {
       category: primaryModel.category,
       source: mergedSource,
       additionalData: mergedAdditionalData.isEmpty ? null : mergedAdditionalData,
+      color: primaryModel.color,
+      weather: primaryModel.weather,
+      forecast: primaryModel.forecast,
+      measurementTime: primaryModel.measurementTime,
+      stationDistance: primaryModel.stationDistance,
+      stationName: primaryModel.stationName,
     );
   }
 } 

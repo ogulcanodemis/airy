@@ -101,6 +101,18 @@ class AirQualityCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
+                              // İstasyon mesafesi bilgisi
+                              if (airQuality.stationDistance > 0)
+                                Text(
+                                  'İstasyon: ${airQuality.stationName} (${airQuality.stationDistance.toStringAsFixed(1)} km uzaklıkta)',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              const SizedBox(height: 4),
                               Wrap(
                                 spacing: 8,
                                 children: [
